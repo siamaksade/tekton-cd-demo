@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: oc-redeploy
+spec:
+  inputs:
+    params:
+      - name: DEPLOYMENT
+        type: string 
+  steps:
+    - name: scale-down
+      image: quay.io/openshift/origin-cli:latest
+      command:
+        - '/bin/sh'
+        - '-c'
+      args:
+      args:
+        - |-
+          oc scale deployment/$(inputs.params.DEPLOYMENT) --replicas=0
+          oc rollout status deployment/$(inputs.params.DEPLOYMENT)
+    - name: scale-up
+      image: quay.io/openshift/origin-cli:latest
+      command:
+        - '/bin/sh'
+        - '-c'
+      args:
+      args:
+        - |-
+          oc scale deployment/$(inputs.params.DEPLOYMENT) --replicas=1
+          oc rollout status deployment/$(inputs.params.DEPLOYMENT)

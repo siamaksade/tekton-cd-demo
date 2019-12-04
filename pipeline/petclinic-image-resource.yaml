@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: petclinic-image
+spec:
+  type: image
+  params:
+  - name: url
+    value: quay.io/siamaksade/spring-petclinic

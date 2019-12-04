@@ -1,0 +1,52 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: mvn
+spec:
+  inputs:
+    params:
+      - name: GOALS
+        description: The Maven goals to run
+        type: array
+        default:
+        - "package"
+    resources:
+    - name: source
+      targetPath: /
+      type: git
+  steps:
+  - name: mvn-settings
+    image: maven:3.6.2-slim
+    workingdir: /.m2
+    command:
+      - '/bin/sh'
+      - '-c'
+    args:
+      - |-
+        cat > /.m2/settings.xml <<EOF
+        <settings>
+          <mirrors>
+            <mirror>
+              <id>bucketrepo</id>
+              <name>bucketrepo- mirror</name>
+              <url>http://mavenrepo:8080/bucketrepo/</url>
+              <mirrorOf>*</mirrorOf>
+            </mirror>
+          </mirrors>
+        </settings>
+        EOF
+    volumeMounts:
+      - name: m2-repository
+        mountPath: /.m2
+  - name: mvn-goals
+    image: maven:3.6.2-slim
+    command:
+    - /usr/bin/mvn
+    args:
+      - "$(inputs.params.GOALS)"
+    volumeMounts:
+      - name: m2-repository
+        mountPath: /.m2
+  volumes:
+    - name: m2-repository
+      emptyDir: {}

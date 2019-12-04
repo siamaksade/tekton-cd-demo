@@ -1,0 +1,34 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: petclinic-trigger-template
+spec:
+  params:
+  - name: gitrevision
+    description: The git revision
+    default: master
+  - name: gitrepositoryurl
+    description: The git repository url
+  - name: message
+    description: The message to print
+    default: This is the default message
+  - name: contenttype
+    description: The Content-Type of the event
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineRun
+    metadata:
+      generateName: petclinic-deploy-pipeline-run-
+      labels:
+        tekton.dev/pipeline: petclinic-deploy-pipeline
+    spec:
+      pipelineRef:
+        name: petclinic-deploy-pipeline
+      resources:
+      - name: app-git
+        resourceRef:
+          name: petclinic-git
+      - name: app-image
+        resourceRef:
+          name: petclinic-image

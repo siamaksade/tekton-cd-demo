@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: petclinic-deploy-pipeline
+spec:
+  resources:
+  - name: app-git
+    type: git
+  - name: app-image
+    type: image
+  tasks:
+  - name: unit-tests
+    taskRef:
+      name: mvn
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+    params:
+    - name: GOALS
+      value: 
+        - package
+  - name: build-image
+    taskRef:
+      name: s2i-java-8
+      kind: ClusterTask
+    runAfter:
+      - unit-tests
+    params:
+      - name: TLSVERIFY
+        value: "false"
+      - name: MAVEN_MIRROR_URL
+        value: http://mavenrepo:8080/bucketrepo/
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+      outputs:
+      - name: image
+        resource: app-image
+  - name: slow-unit-tests
+    taskRef:
+      name: mvn
+    runAfter:
+      - unit-tests
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+    params:
+    - name: GOALS
+      value:
+        - verify
+  - name: deploy
+    taskRef:
+      name: oc-redeploy
+    runAfter:
+      - build-image
+      - slow-unit-tests
+    params:
+    - name: DEPLOYMENT
+      value: spring-petclinic
