@@ -10,9 +10,7 @@ resources:
   - pipeline/petclinic-git-resource.yaml
   - pipeline/petclinic-image-resource.yaml
   - pipeline/petclinic-deploy-pipeline.yaml
-  - webhook/triggerbinding.yaml
-  - webhook/triggertemplate.yaml
-  - webhook/eventlistener.yaml
+  - webhook/trigger.yaml
 
 commonLabels:
   demo: tekton-cd-demo
