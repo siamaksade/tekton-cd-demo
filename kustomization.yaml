@@ -2,15 +2,17 @@ resources:
   - app/deployment.yaml
   - app/service.yaml
   - app/route.yaml
-  - cd-infra/maven-configmap.yaml
-  - cd-infra/maven-repo-deployment.yaml
-  - cd-infra/quay-push-secret.yaml
   - tasks/mvn-task.yaml
   - tasks/oc-deploy-task.yaml
   - pipeline/petclinic-git-resource.yaml
   - pipeline/petclinic-image-resource.yaml
   - pipeline/petclinic-deploy-pipeline.yaml
-  - webhook/trigger.yaml
+  - triggers/triggertemplate.yaml
+  - triggers/triggerbinding.yaml
+  - triggers/eventlistener.yaml
+  - cd-infra/maven-configmap.yaml
+  - cd-infra/maven-repo-deployment.yaml
+  - cd-infra/quay-push-secret.yaml
 
 commonLabels:
   demo: tekton-cd-demo

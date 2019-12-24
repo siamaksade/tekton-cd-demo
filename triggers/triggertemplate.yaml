@@ -1,18 +1,5 @@
 ---
 apiVersion: tekton.dev/v1alpha1
-kind: TriggerBinding
-metadata:
-  name: github-trigger-binding
-spec:
-  params:
-  - name: gitrevision
-    value: $(body.head_commit.id)
-  - name: gitrepositoryurl
-    value: $(body.repository.url)
-  - name: contenttype
-    value: $(header.Content-Type)
----
-apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
   name: petclinic-trigger-template
@@ -45,28 +32,3 @@ spec:
       - name: app-image
         resourceRef:
           name: petclinic-image
----
-apiVersion: tekton.dev/v1alpha1
-kind: EventListener
-metadata:
-  name: webhook-listener
-spec:
-  serviceAccountName: pipeline
-  triggers:
-    - name: petclinic-webhook
-      binding:
-        name: github-trigger-binding
-      template:
-        name: petclinic-trigger-template
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: webhook-listener
-spec:
-  port:
-    targetPort: 8080
-  to:
-    kind: "Service"
-    name: el-webhook-listener
-    weight: 100
