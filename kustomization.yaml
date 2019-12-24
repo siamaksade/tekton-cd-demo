@@ -10,7 +10,6 @@ resources:
   - triggers/triggertemplate.yaml
   - triggers/triggerbinding.yaml
   - triggers/eventlistener.yaml
-  - cd-infra/maven-configmap.yaml
   - cd-infra/maven-repo-deployment.yaml
 
 commonLabels:
