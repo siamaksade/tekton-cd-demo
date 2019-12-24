@@ -3,7 +3,7 @@ resources:
   - app/service.yaml
   - app/route.yaml
   - tasks/mvn-task.yaml
-  - tasks/oc-deploy-task.yaml
+  - tasks/oc-task.yaml
   - pipeline/petclinic-git-resource.yaml
   - pipeline/petclinic-image-resource.yaml
   - pipeline/petclinic-deploy-pipeline.yaml
