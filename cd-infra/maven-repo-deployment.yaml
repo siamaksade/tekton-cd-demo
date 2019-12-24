@@ -11,6 +11,8 @@ stringData:
   config.yaml: |
     http:
         addr: ":8080"
+        username: "admin"
+        password: "admin"
     
     storage:
         enabled: false
@@ -48,7 +50,7 @@ metadata:
     app.kubernetes.io/component: mavenrepo
     app.kubernetes.io/instance: mavenrepo
     app.kubernetes.io/name: mavenrepo
-    app.kubernetes.io/part-of: ci-infra
+    app.kubernetes.io/part-of: cicd-infra
 spec:
   replicas: 1
   selector:

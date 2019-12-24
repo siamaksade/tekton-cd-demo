@@ -22,7 +22,7 @@ spec:
       containers:
       - name: spring-petclinic
         imagePullPolicy: Always
-        image: quay.io/siamaksade/spring-petclinic:latest
+        image: image-registry.openshift-image-registry.svc:5000/pipelines-demo/spring-petclinic
         livenessProbe:
           failureThreshold: 3
           httpGet:

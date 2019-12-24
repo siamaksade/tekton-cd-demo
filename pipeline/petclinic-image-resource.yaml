@@ -6,5 +6,5 @@ spec:
   type: image
   params:
   - name: url
-    value: quay.io/siamaksade/spring-petclinic
-#    value: image-registry.openshift-image-registry.svc:5000/pipelines-demo/spring-petclinic
+#    value: quay.io/siamaksade/spring-petclinic
+    value: image-registry.openshift-image-registry.svc:5000/pipelines-demo/spring-petclinic

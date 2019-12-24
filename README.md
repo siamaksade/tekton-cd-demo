@@ -10,7 +10,8 @@
 3. Deploy the demo
 
   ```
-  $ kustomize build --reorder none | oc create -f -
+  $ oc new-project demo
+  $ oc create -f https://raw.githubusercontent.com/siamaksade/tekton-cd-demo/master/install-taskrun.yaml
   ```
 
 

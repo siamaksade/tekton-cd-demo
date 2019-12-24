@@ -1,0 +1,124 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  generateName: install-tekton-cd-demo-
+spec:
+  taskSpec:
+    inputs:
+      params:
+        - name: GOGS_USER
+          type: string
+          description: Gogs admin username
+          default: gogs
+        - name: GOGS_PASSWORD
+          type: string
+          description: Gogs admin password
+          default: gogs
+    stepTemplate:
+      env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+    steps:
+      - name: install-cd-infra
+        image: quay.io/openshift/origin-cli:latest
+        script: |
+          #!/usr/bin/env bash
+
+          # download kustomize
+          curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | \
+              grep browser_download_url.*linux_amd64.tar.gz | \
+              cut -d '"' -f 4 | \
+              wget -qi -
+          tar xvfz kustomize*.tar.gz
+          ./kustomize version
+
+          # deploy app && pipelines
+          oc import-image quay.io/siamaksade/spring-petclinic --confirm
+
+          wget https://github.com/siamaksade/tekton-cd-demo/archive/master.tar.gz 
+          tar xvfz master.tar.gz
+          ./kustomize build tekton-cd-demo-master --reorder none | sed "s/pipelines-demo/${NAMESPACE}/g" |  oc create -f -
+
+          # deploy gogs git server
+          HOSTNAME=$(oc get route webhook -o template --template='{{.spec.host}}' | sed "s/webhook-${NAMESPACE}.//g")
+          oc new-app -f https://raw.githubusercontent.com/siamaksade/gogs/master/gogs-template.yaml \
+              --param=HOSTNAME=gogs-$NAMESPACE.$HOSTNAME \
+              --param=SKIP_TLS_VERIFY=true \
+              || true
+
+          # deploy sonarqube
+          oc new-app -f https://raw.githubusercontent.com/siamaksade/sonarqube/master/sonarqube-persistent-template.yml --param=SONARQUBE_MEMORY_LIMIT=4Gi || true
+          oc set resources dc/sonardb --limits=cpu=200m,memory=512Mi --requests=cpu=50m,memory=128Mi || true
+          oc set resources dc/sonarqube --limits=cpu=1,memory=4Gi --requests=cpu=200m,memory=512Mi || true
+
+          # deploy nexus
+          # oc new-app -f https://raw.githubusercontent.com/siamaksade/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.20.1 --param=MAX_MEMORY=2Gi --param=VOLUME_CAPACITY=10Gi || true
+          # oc set resources dc/nexus --requests=cpu=200m --limits=cpu=2 || true
+
+          # configure labels
+          oc label dc sonarqube "app.kubernetes.io/part-of"="cicd-infra" --overwrite
+          oc label dc sonardb "app.kubernetes.io/part-of"="cicd-infra" --overwrite
+          # oc label dc nexus "app.kubernetes.io/part-of"="cicd-infra" --overwrite
+          oc label dc gogs "app.kubernetes.io/part-of"="cicd-infra" --overwrite
+          oc label dc gogs-postgresql "app.kubernetes.io/part-of"="cicd-infra" --overwrite
+          oc label dc el-webhook "app.kubernetes.io/part-of"="cicd-infra" --overwrite
+
+          # wait for gogs git server to be ready
+          oc rollout status dc gogs
+
+      - name: configure-gogs
+        image: quay.io/siamaksade/python-oc
+        script: |
+          #!/usr/bin/env python3
+
+          import os
+          import requests 
+
+          gogs_user = "$(inputs.params.GOGS_USER)"
+          gogs_pwd = "$(inputs.params.GOGS_PASSWORD)"
+          webhookURL = "http://" + os.popen('oc get route webhook -o template --template="{{.spec.host}}"').read()
+          gogsURL = "http://" + os.popen('oc get svc gogs -o template --template="{{.spec.clusterIP}}"').read() + ":3000"
+
+          # create admin user
+          data_user = {
+          'user_name': gogs_user,
+          'password': gogs_pwd,
+          'retype': gogs_pwd,
+          'email': 'admin@gogs.com'
+          }
+
+          resp = requests.post(url = gogsURL + "/user/sign_up", data = data_user) 
+
+          if resp.status_code != 200:
+            print("Error creating Gogs admin (status code: {})".format(resp.status_code))
+            print(resp.content)
+          else:
+            print("Created admin user {}:{}".format(gogs_user, gogs_pwd))
+
+          # create git repo
+          data_repo = '{"clone_addr": "https://github.com/siamaksade/spring-petclinic", "uid": 1, "repo_name": "spring-petclinic"}'
+          headers = {'Content-Type': 'application/json'}
+          resp = requests.post(url = gogsURL + "/api/v1/repos/migrate", headers = headers, auth = (gogs_user, gogs_pwd), data = data_repo)  
+
+          if resp.status_code != 200 and resp.status_code != 201:
+            print("Error creating git repo (status code: {})".format(resp.status_code))
+            print(resp.content)
+          else:
+            print("Created git repo spring-petclinic")
+
+          # configure webhook
+          data_webhook = '{"type": "gogs", "config": { "url": "' + webhookURL + '", "content_type": "json"}, "events": ["push"], "active": true}'
+          headers = {'Content-Type': 'application/json'}
+          resp = requests.post(url = gogsURL + "/api/v1/repos/" + gogs_user + "/spring-petclinic/hooks", 
+                              headers = headers, 
+                              auth = (gogs_user, gogs_pwd), 
+                              data = data_webhook) 
+
+          if resp.status_code != 200 and resp.status_code != 201:
+            print("Error configuring the webhook (status code: {})".format(resp.status_code))
+            print(resp.content)
+          else:
+            print("Configured webhook: " + webhookURL)
+

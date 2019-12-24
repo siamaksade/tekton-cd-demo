@@ -12,7 +12,6 @@ resources:
   - triggers/eventlistener.yaml
   - cd-infra/maven-configmap.yaml
   - cd-infra/maven-repo-deployment.yaml
-  - cd-infra/quay-push-secret.yaml
 
 commonLabels:
   demo: tekton-cd-demo
