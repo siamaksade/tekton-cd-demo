@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: github-trigger-binding
+  name: github-triggerbinding
 spec:
   params:
   - name: gitrevision

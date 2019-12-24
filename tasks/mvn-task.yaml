@@ -24,14 +24,14 @@ spec:
     args:
       - |-
         cat > /.m2/settings.xml <<EOF
-        <servers>
-          <server>
-            <id>bucketrepo</id>
-            <username>admin</username>
-            <password>admin</password>
-          </server>
-        </servers>
         <settings>
+          <servers>
+            <server>
+              <id>bucketrepo</id>
+              <username>admin</username>
+              <password>admin</password>
+            </server>
+          </servers>
           <mirrors>
             <mirror>
               <id>bucketrepo</id>

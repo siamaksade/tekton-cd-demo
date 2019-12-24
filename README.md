@@ -1,7 +1,7 @@
 # CI/CD Demo with Tekton Pipelines
 
 
-1. Get an OpenShift cluster via try.openshift.com 
+1. Get an OpenShift cluster via https://try.openshift.com
 
 2. Install OpenShift Pipelines Operator
 

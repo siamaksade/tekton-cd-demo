@@ -1,0 +1,13 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: gogs-triggerbinding
+spec:
+  params:
+  - name: gitrevision
+    value: $(after)
+  - name: gitrepositoryurl
+    value: $(repository.clone_url)
+  - name: contenttype
+    value: $(header.Content-Type)

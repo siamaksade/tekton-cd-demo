@@ -8,7 +8,8 @@ resources:
   - pipeline/petclinic-image-resource.yaml
   - pipeline/petclinic-deploy-pipeline.yaml
   - triggers/triggertemplate.yaml
-  - triggers/triggerbinding.yaml
+  - triggers/github-triggerbinding.yaml
+  - triggers/gogs-triggerbinding.yaml
   - triggers/eventlistener.yaml
   - cd-infra/maven-repo-deployment.yaml
 

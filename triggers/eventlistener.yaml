@@ -8,7 +8,7 @@ spec:
   triggers:
     - name: petclinic-webhook
       binding:
-        name: github-trigger-binding
+        name: gogs-triggerbinding
       template:
         name: petclinic-trigger-template
 ---
