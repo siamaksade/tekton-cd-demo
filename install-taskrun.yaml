@@ -39,7 +39,8 @@ spec:
 
           wget https://github.com/siamaksade/tekton-cd-demo/archive/master.tar.gz 
           tar xvfz master.tar.gz
-          ./kustomize build tekton-cd-demo-master --reorder none | sed "s/pipelines-demo/${NAMESPACE}/g" |  oc create -f -
+          ./kustomize build tekton-cd-demo-master --reorder none \
+                | sed "s/pipelines-demo/${NAMESPACE}/g" | oc create -f -
 
           # deploy gogs git server
           HOSTNAME=$(oc get route webhook -o template --template='{{.spec.host}}' | sed "s/webhook-${NAMESPACE}.//g")
@@ -63,7 +64,7 @@ spec:
           # oc label dc nexus "app.kubernetes.io/part-of"="cicd-infra" --overwrite
           oc label dc gogs "app.kubernetes.io/part-of"="cicd-infra" --overwrite
           oc label dc gogs-postgresql "app.kubernetes.io/part-of"="cicd-infra" --overwrite
-          oc label dc el-webhook "app.kubernetes.io/part-of"="cicd-infra" --overwrite
+          oc label deployment el-webhook "app.kubernetes.io/part-of"="cicd-infra" --overwrite
 
           # wait for gogs git server to be ready
           oc rollout status dc gogs
