@@ -51,12 +51,29 @@ spec:
     - name: GOALS
       value:
         - verify
+  - name: code-analysis
+    taskRef:
+      name: mvn
+    runAfter:
+      - unit-tests
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+    params:
+    - name: GOALS
+      value:
+        - install
+        - sonar:sonar
+        - -Dsonar.host.url=http://sonarqube:9000 
+        - -Dsonar.userHome=/tmp/sonar
   - name: deploy
     taskRef:
       name: openshift-client
     runAfter:
       - build-image
       - slow-unit-tests
+      - code-analysis
     params:
     - name: COMMANDS
       value: |
