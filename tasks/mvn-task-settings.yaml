@@ -1,42 +1,3 @@
----
-apiVersion: tekton.dev/v1alpha1
-kind: Task
-metadata:
-  name: maven
-spec:
-  workspaces:
-  - name: maven-repo
-  inputs:
-    params:
-    - name: GOALS
-      description: The Maven goals to run
-      type: array
-      default: ["package"]
-    - name: MAVEN_SETTINGS_CONFIGMAP
-      description: The configmap containing Maven settings.xml
-      type: string
-      default: maven-settings
-    resources:
-    - name: source
-      type: git
-  steps:
-    - name: mvn
-      image: gcr.io/cloud-builders/mvn
-      workingDir: /workspace/source
-      command: ["/usr/bin/mvn"]
-      args:
-        - -Dmaven.repo.local=$(workspaces.maven-repo.path)
-        - -s
-        - /var/config/settings.xml
-        - "$(inputs.params.GOALS)"
-      volumeMounts:
-        - name: maven-settings
-          mountPath: /var/config
-  volumes:
-    - name: maven-settings
-      configMap:
-        name: $(inputs.params.MAVEN_SETTINGS_CONFIGMAP)
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -44,6 +5,26 @@ metadata:
 data:
   settings.xml: |
     <?xml version="1.0" encoding="UTF-8"?>
+
+    <!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+    -->
+
     <!--
     | This is the configuration file for Maven. It can be specified at two levels:
     |

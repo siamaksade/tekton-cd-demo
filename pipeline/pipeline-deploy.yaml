@@ -3,6 +3,8 @@ kind: Pipeline
 metadata:
   name: petclinic-deploy-pipeline
 spec:
+  workspaces:
+  - name: local-maven-repo
   resources:
   - name: app-git
     type: git
@@ -11,26 +13,31 @@ spec:
   tasks:
   - name: unit-tests
     taskRef:
-      name: mvn
+      name: maven
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
     resources:
       inputs:
       - name: source
         resource: app-git
     params:
     - name: GOALS
-      value: 
-        - package
+      value: ["package"]
+    - name: MAVEN_SETTINGS_CONFIGMAP
+      value: custom-maven-settings
   - name: build-image
     taskRef:
       name: s2i-java-8
       kind: ClusterTask
     runAfter:
-      - unit-tests
+      - release-app
+      - code-analysis
     params:
       - name: TLSVERIFY
         value: "false"
       - name: MAVEN_MIRROR_URL
-        value: http://mavenrepo:8080/bucketrepo/
+        value: http://nexus:8081/repository/maven-public/
     resources:
       inputs:
       - name: source
@@ -38,11 +45,14 @@ spec:
       outputs:
       - name: image
         resource: app-image
-  - name: slow-unit-tests
+  - name: release-app
     taskRef:
-      name: mvn
+      name: maven
     runAfter:
       - unit-tests
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
     resources:
       inputs:
       - name: source
@@ -50,12 +60,20 @@ spec:
     params:
     - name: GOALS
       value:
-        - verify
+      - deploy
+      - -DskipTests=true
+      - -DaltDeploymentRepository=nexus::default::http://nexus:8081/repository/maven-releases/
+      - -DaltSnapshotDeploymentRepository=nexus::default::http://nexus:8081/repository/maven-snapshots/
+    - name: MAVEN_SETTINGS_CONFIGMAP
+      value: custom-maven-settings
   - name: code-analysis
     taskRef:
-      name: mvn
+      name: maven
     runAfter:
       - unit-tests
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
     resources:
       inputs:
       - name: source
@@ -67,13 +85,13 @@ spec:
         - sonar:sonar
         - -Dsonar.host.url=http://sonarqube:9000 
         - -Dsonar.userHome=/tmp/sonar
+    - name: MAVEN_SETTINGS_CONFIGMAP
+      value: custom-maven-settings
   - name: deploy
     taskRef:
       name: openshift-client
     runAfter:
       - build-image
-      - slow-unit-tests
-      - code-analysis
     params:
     - name: COMMANDS
       value: |

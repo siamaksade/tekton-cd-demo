@@ -11,10 +11,8 @@
 
   ```
   $ oc new-project demo
-  $ oc create -f https://raw.githubusercontent.com/siamaksade/tekton-cd-demo/master/install-taskrun.yaml
+  $ install.sh
   ```
-
-  You can check out the install logs using the Tekton CLI `tkn tr logs -f`.
 
 ![Pipelines in Dev Console](docs/images/pipelines.png)
 
