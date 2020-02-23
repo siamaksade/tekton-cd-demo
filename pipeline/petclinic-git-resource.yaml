@@ -6,4 +6,4 @@ spec:
   type: git
   params:
   - name: url
-    value: https://github.com/siamaksade/spring-petclinic
+    value: https://github.com/spring-projects/spring-petclinic

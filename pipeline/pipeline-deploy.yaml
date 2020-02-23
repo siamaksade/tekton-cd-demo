@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: petclinic-deploy-pipeline
+  name: petclinic-deploy
 spec:
   workspaces:
   - name: local-maven-repo
@@ -83,6 +83,7 @@ spec:
       value:
         - install
         - sonar:sonar
+        - -DskipTests
         - -Dsonar.host.url=http://sonarqube:9000 
         - -Dsonar.userHome=/tmp/sonar
     - name: MAVEN_SETTINGS_CONFIGMAP

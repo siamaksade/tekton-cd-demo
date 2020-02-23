@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    # image.openshift.io/triggers: >-
-    #     [{"from":{"kind":"ImageStreamTag","name":"spring-petclinic:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"spring-petclinic\")].image"}]
   labels:
     app: spring-petclinic
     app.kubernetes.io/component: web

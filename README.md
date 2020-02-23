@@ -11,7 +11,8 @@
 
   ```
   $ oc new-project demo
-  $ install.sh
+  $ install.sh  # deploy demo
+  $ run.sh      # start pipeline
   ```
 
 ![Pipelines in Dev Console](docs/images/pipelines.png)
