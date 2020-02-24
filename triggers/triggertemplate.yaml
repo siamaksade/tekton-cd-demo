@@ -19,12 +19,12 @@ spec:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      generateName: petclinic-deploy-pipeline-run-
+      generateName: petclinic-deploy-run-
       labels:
-        tekton.dev/pipeline: petclinic-deploy-pipeline
+        tekton.dev/pipeline: petclinic-deploy
     spec:
       pipelineRef:
-        name: petclinic-deploy-pipeline
+        name: petclinic-deploy
       resources:
       - name: app-git
         resourceRef:
@@ -32,3 +32,7 @@ spec:
       - name: app-image
         resourceRef:
           name: petclinic-image
+      workspaces:
+      - name: local-maven-repo
+        persistentVolumeClaim:
+          claimName: maven-repo-pvc

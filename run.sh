@@ -12,18 +12,12 @@ spec:
   pipelineRef:
     name: petclinic-deploy
   resources:
-    - name: app-git
-      resourceSpec:
-        type: git
-        params:
-          - name: url
-            value: http://${GOGS_HOSTNAME}/gogs/spring-petclinic.git
-    - name: app-image
-      resourceSpec:
-        type: image
-        params:
-          - name: url
-            value: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/spring-petclinic
+  - name: app-git
+    resourceRef:
+      name: petclinic-git
+  - name: app-image
+    resourceRef:
+      name: petclinic-image
   workspaces:
   - name: local-maven-repo
     persistentVolumeClaim:
