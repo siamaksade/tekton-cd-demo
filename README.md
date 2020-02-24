@@ -16,7 +16,7 @@ On every push to the `spring-petclinic` git repository on Gogs git server, the f
 1. A container image (_spring-petclinic:latest_) is built using the [Source-to-Image](https://github.com/openshift/source-to-image) for Java apps, and pushed to OpenShift internal registry
 1. Application image is deployed with a rolling update
 
-![Pipeline Diagram](docs/images/pipeline-diagram.png)
+![Pipeline Diagram](docs/images/pipeline-diagram.svg)
 
 # Deploy
 
