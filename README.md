@@ -50,5 +50,4 @@ On every push to the `spring-petclinic` git repository on Gogs git server, the f
 
 ## TODO
 
-* Fix SonarQube empty reports
 * Add pipeline for promotion to stage

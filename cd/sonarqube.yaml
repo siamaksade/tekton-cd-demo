@@ -2,110 +2,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sonarqube-postgresql
-  annotations:
-    image.openshift.io/triggers: >-
-        [{"from":{"kind":"ImageStreamTag","name":"postgresql:latest", "namespace":"openshift"},"fieldPath":"spec.template.spec.containers[?(@.name==\"sonarqube\")].image"}]
-  labels:
-    app: sonarqube
-    app.kubernetes.io/component: database
-    app.kubernetes.io/instance: sonarqube
-    app.kubernetes.io/name: sonarqube-postgresql
-    app.kubernetes.io/part-of: sonarqube
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: sonarqube
-      name: sonarqube-postgresql
-  template:
-    metadata:
-      labels:
-        app: sonarqube
-        name: sonarqube-postgresql
-    spec:
-      containers:
-      - name: sonarqube
-        imagePullPolicy: Always
-        image: postgresql:latest
-        env:
-        - name: POSTGRESQL_USER
-          value: sonarqube
-        - name: POSTGRESQL_PASSWORD
-          value: sonarqube
-        - name: POSTGRESQL_DATABASE
-          value: sonarqube
-        - name: POSTGRESQL_MAX_CONNECTIONS
-          value: "100"
-        - name: POSTGRESQL_SHARED_BUFFERS
-          value: 12MB
-        - name: POSTGRESQL_ADMIN_PASSWORD
-          value: sonarqube
-        ports:
-        - containerPort: 5432
-        livenessProbe:
-          initialDelaySeconds: 30
-          tcpSocket:
-            port: 5432
-          timeoutSeconds: 1
-          failureThreshold: 10
-          periodSeconds: 20
-        readinessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -i
-            - -c
-            - psql -h 127.0.0.1 -U ${POSTGRESQL_USER} -q -d ${POSTGRESQL_DATABASE} -c 'SELECT 1'
-        resources:
-          limits:
-            memory: 512Mi
-        resources:
-          limits:
-            cpu: 200m
-            memory: 512Mi
-          requests:
-            cpu: 50m
-            memory: 128Mi
-        volumeMounts:
-        - mountPath: /var/lib/pgsql/data
-          name: sonarqube-postgres-data
-      volumes:
-      - name: sonarqube-postgres-data
-        persistentVolumeClaim:
-          claimName: sonarqube-postgres-data
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: sonarqube-postgresql
-  labels:
-    app: sonarqube
-spec:
-  ports:
-  - name: postgresql
-    port: 5432
-    targetPort: 5432
-  selector:
-    name: sonarqube-postgresql
-    app: sonarqube
---- 
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: sonarqube-postgres-data
-  labels:
-    app: sonarqube
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: sonarqube
   labels:
     app: sonarqube
@@ -128,58 +24,21 @@ spec:
       containers:
       - name: sonarqube
         imagePullPolicy: Always
-        image: docker.io/siamaksade/sonarqube:latest
-        env:
-        - name: JDBC_URL
-          value: jdbc:postgresql://sonarqube-postgresql:5432/sonarqube
-        - name: JDBC_USERNAME
-          value: sonarqube
-        - name: JDBC_PASSWORD
-          value: sonarqube
-        - name: FORCE_AUTHENTICATION
-          value: "false"
-        - name: PROXY_HOST
-          value: ""
-        - name: PROXY_PORT
-          value: ""
-        - name: PROXY_USER
-          value: ""
-        - name: PROXY_PASSWORD
-          value: ""
-        - name: LDAP_URL
-          value: ""
-        - name: LDAP_REALM
-          value: ""
-        - name: LDAP_AUTHENTICATION
-          value: ""
-        - name: LDAP_USER_BASEDN
-          value: ""
-        - name: LDAP_USER_REAL_NAME_ATTR
-          value: ""
-        - name: LDAP_USER_EMAIL_ATTR
-          value: ""
-        - name: LDAP_USER_REQUEST
-          value: ""
-        - name: LDAP_GROUP_BASEDN
-          value: ""
-        - name: LDAP_GROUP_REQUEST
-          value: ""
-        - name: LDAP_GROUP_ID_ATTR
-          value: ""
-        - name: LDAP_CONTEXTFACTORY
-          value: com.sun.jndi.ldap.LdapCtxFactory
-        - name: SONAR_AUTOCREATE_USERS
-          value: "false"
-        - name: LDAP_BINDDN
-          value: ""
-        - name: LDAP_BINDPASSWD
-          value: ""
+        image: docker.io/sonarqube:8-community-beta
         ports:
         - containerPort: 9000
           protocol: TCP
         volumeMounts:
-        - mountPath: /opt/sonarqube/data
+        - mountPath: /opt/sq/temp
+          name: sonarqube-temp
+        - mountPath: /opt/sq/conf
+          name: sonarqube-conf
+        - mountPath: /opt/sq/data
           name: sonarqube-data
+        - mountPath: /opt/sq/extensions
+          name: sonarqube-extensions
+        - mountPath: /opt/sq/logs
+          name: sonarqube-logs
         livenessProbe:
           failureThreshold: 10
           httpGet:
@@ -208,9 +67,16 @@ spec:
             cpu: 200m
             memory: 512Mi
       volumes:
+      - name: sonarqube-temp
+        emptyDir: {}
+      - name: sonarqube-conf
+        emptyDir: {}
       - name: sonarqube-data
-        persistentVolumeClaim:
-          claimName: sonarqube-data
+        emptyDir: {}
+      - name: sonarqube-extensions
+        emptyDir: {}
+      - name: sonarqube-logs
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Route
@@ -245,16 +111,3 @@ spec:
     app: sonarqube
     name: sonarqube
   type: ClusterIP
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  labels:
-    app: sonarqube
-  name: sonarqube-data
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi

@@ -68,7 +68,7 @@ spec:
       value: custom-maven-settings
   - name: code-analysis
     taskRef:
-      name: maven
+      name: sonar
     runAfter:
       - unit-tests
     workspaces:
@@ -79,13 +79,6 @@ spec:
       - name: source
         resource: app-git
     params:
-    - name: GOALS
-      value:
-        - install
-        - sonar:sonar
-        - -DskipTests
-        - -Dsonar.host.url=http://sonarqube:9000 
-        - -Dsonar.userHome=/tmp/sonar
     - name: MAVEN_SETTINGS_CONFIGMAP
       value: custom-maven-settings
   - name: deploy

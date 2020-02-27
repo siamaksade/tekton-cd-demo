@@ -15,4 +15,4 @@ spec:
   workspaces:
   - name: local-maven-repo
     persistentVolumeClaim:
-      claimName: maven-repo-pvc
+      claimName: maven-repo-pvc1
