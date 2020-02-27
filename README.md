@@ -28,19 +28,19 @@ On every push to the `spring-petclinic` git repository on Gogs git server, the f
     ```
     $ oc new-project demo
     $ git clone https://github.com/siamaksade/tekton-cd-demo 
-    $ install.sh
+    $ demo.sh install
     ```
 
 1. Start the deploy pipeline by making a change in the `spring-petclinic` Git repository on Gogs, or run the following:
 
     ```
-    $ run.sh
+    $ demo.sh start
     ```
 
 1. Check pipeline run logs
 
     ```
-    $ tkn p logs petclinic-deploy -f
+    $ tkn pipeline logs petclinic-deploy -f NAMESPACE
     ```
 
 ![Pipelines in Dev Console](docs/images/pipelines.png)
@@ -51,5 +51,4 @@ On every push to the `spring-petclinic` git repository on Gogs git server, the f
 ## TODO
 
 * Fix SonarQube empty reports
-* Separate cd infra deployments into a different namespace
-* Add stating environment
+* Add pipeline for promotion to stage

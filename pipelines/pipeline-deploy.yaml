@@ -1,0 +1,102 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: petclinic-deploy
+spec:
+  workspaces:
+  - name: local-maven-repo
+  resources:
+  - name: app-git
+    type: git
+  - name: app-image
+    type: image
+  tasks:
+  - name: unit-tests
+    taskRef:
+      name: maven
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+    params:
+    - name: GOALS
+      value: ["package"]
+    - name: MAVEN_SETTINGS_CONFIGMAP
+      value: custom-maven-settings
+  - name: build-image
+    taskRef:
+      name: s2i-java-8
+      kind: ClusterTask
+    runAfter:
+      - release-app
+      - code-analysis
+    params:
+      - name: TLSVERIFY
+        value: "false"
+      - name: MAVEN_MIRROR_URL
+        value: http://nexus:8081/repository/maven-public/
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+      outputs:
+      - name: image
+        resource: app-image
+  - name: release-app
+    taskRef:
+      name: maven
+    runAfter:
+      - unit-tests
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+    params:
+    - name: GOALS
+      value:
+      - deploy
+      - -DskipTests=true
+      - -DaltDeploymentRepository=nexus::default::http://nexus:8081/repository/maven-releases/
+      - -DaltSnapshotDeploymentRepository=nexus::default::http://nexus:8081/repository/maven-snapshots/
+    - name: MAVEN_SETTINGS_CONFIGMAP
+      value: custom-maven-settings
+  - name: code-analysis
+    taskRef:
+      name: maven
+    runAfter:
+      - unit-tests
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+    params:
+    - name: GOALS
+      value:
+        - install
+        - sonar:sonar
+        - -DskipTests
+        - -Dsonar.host.url=http://sonarqube:9000 
+        - -Dsonar.userHome=/tmp/sonar
+    - name: MAVEN_SETTINGS_CONFIGMAP
+      value: custom-maven-settings
+  - name: deploy
+    taskRef:
+      name: openshift-client
+    runAfter:
+      - build-image
+    params:
+    - name: COMMANDS
+      value: |
+          oc scale deployment/spring-petclinic --replicas=0 -n demo-dev
+          oc rollout status deployment/spring-petclinic -n demo-dev
+          oc scale deployment/spring-petclinic --replicas=1 -n demo-dev
+          oc rollout status deployment/spring-petclinic -n demo-dev
