@@ -84,11 +84,17 @@ command.install() {
   oc policy add-role-to-user edit system:serviceaccount:$cicd_prj:pipeline -n $stage_prj
 
   info "Deploying CI/CD infra to $cicd_prj namespace"
-  oc apply -f tasks -n $cicd_prj
-  oc apply -f pipeline -n $cicd_prj
-  oc apply -f triggers -n $cicd_prj
   oc apply -f cd -n $cicd_prj
-  oc create -f config/maven-configmap.yaml -n $cicd_prj
+  GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{.spec.host}}' -n $cicd_prj)
+
+  info "Deploying pipeline and tasks to $cicd_prj namespace"
+  oc apply -f tasks -n $cicd_prj
+  oc apply -f config/maven-configmap.yaml -n $cicd_prj
+  oc apply -f pipelines/pipeline-pvc.yaml -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy.yaml | oc apply -f - -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $cicd_prj
+  sed "s#https://github.com/spring-projects/spring-petclinic#http://$GOGS_HOSTNAME/gogs/spring-petclinic.git#g" pipelines/petclinic-git-resource.yaml | oc apply -f - -n $cicd_prj
+  oc apply -f triggers -n $cicd_prj
 
   info "Deploying app to $dev_prj namespace"
   oc import-image quay.io/siamaksade/spring-petclinic --confirm -n $dev_prj
@@ -96,87 +102,46 @@ command.install() {
   oc set image deployment/spring-petclinic spring-petclinic=image-registry.openshift-image-registry.svc:5000/$dev_prj/spring-petclinic -n $dev_prj
 
   info "Deploying app to $stage_prj namespace"
-  oc import-image quay.io/siamaksade/spring-petclinic --confirm -n $stage_prj
+  oc tag $dev_prj/spring-petclinic:latest $stage_prj/spring-petclinic:latest
   oc apply -f app -n $stage_prj
   oc set image deployment/spring-petclinic spring-petclinic=image-registry.openshift-image-registry.svc:5000/$stage_prj/spring-petclinic -n $stage_prj
 
   info "Initiatlizing git repository in Gogs and configuring webhooks"
-  GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{.spec.host}}' -n $cicd_prj)
   sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" config/gogs-configmap.yaml | oc create -f - -n $cicd_prj
   oc rollout status deployment/gogs -n $cicd_prj
   oc create -f config/gogs-init-taskrun.yaml -n $cicd_prj
 
 
-  info "Creating pipeline resources for Gogs git repo and internal registry"
-  # create pipeline resources
-  cat <<EOF | oc create -f - -n $cicd_prj
-apiVersion: tekton.dev/v1alpha1
-kind: PipelineResource
-metadata:
-  name: petclinic-git
-spec:
-  type: git
-  params:
-  - name: url
-    value: http://$GOGS_HOSTNAME/gogs/spring-petclinic.git
-EOF
+#   info "Creating pipeline resources for Gogs git repo and internal registry"
+#   # create pipeline resources
+#   cat <<EOF | oc create -f - -n $cicd_prj
+# apiVersion: tekton.dev/v1alpha1
+# kind: PipelineResource
+# metadata:
+#   name: petclinic-git
+# spec:
+#   type: git
+#   params:
+#   - name: url
+#     value: http://$GOGS_HOSTNAME/gogs/spring-petclinic.git
+# EOF
 
-  cat <<EOF | oc create -f - -n $cicd_prj
-apiVersion: tekton.dev/v1alpha1
-kind: PipelineResource
-metadata:
-  name: petclinic-image
-spec:
-  type: image
-  params:
-  - name: url
-    value: image-registry.openshift-image-registry.svc:5000/$dev_prj/spring-petclinic
-EOF
-
-  cat <<EOF | oc create -f - -n $cicd_prj
-apiVersion: tekton.dev/v1alpha1
-kind: TriggerTemplate
-metadata:
-  name: petclinic-trigger-template
-spec:
-  params:
-  - name: gitrevision
-    description: The git revision
-    default: master
-  - name: gitrepositoryurl
-    description: The git repository url
-  - name: message
-    description: The message to print
-    default: This is the default message
-  - name: contenttype
-    description: The Content-Type of the event
-  resourcetemplates:
-  - apiVersion: tekton.dev/v1alpha1
-    kind: PipelineRun
-    metadata:
-      generateName: petclinic-deploy-run-
-      labels:
-        tekton.dev/pipeline: petclinic-deploy
-    spec:
-      pipelineRef:
-        name: petclinic-deploy
-    params:
-      - name: "NAMESPACE"
-        value: "$dev_prj"
-      resources:
-      - name: app-git
-        resourceRef:
-          name: petclinic-git
-      - name: app-image
-        resourceRef:
-          name: petclinic-image
-      workspaces:
-      - name: local-maven-repo
-        persistentVolumeClaim:
-          claimName: maven-repo-pvc
-EOF
+#   cat <<EOF | oc create -f - -n $cicd_prj
+# apiVersion: tekton.dev/v1alpha1
+# kind: PipelineResource
+# metadata:
+#   name: petclinic-image
+# spec:
+#   type: image
+#   params:
+#   - name: url
+#     value: image-registry.openshift-image-registry.svc:5000/$dev_prj/spring-petclinic
+# EOF
 
   cat <<-EOF
+
+############################################################################
+############################################################################
 
   Demo is installed! Give it a few minutes to finish deployments and then:
 
@@ -190,35 +155,14 @@ EOF
   4) Check the pipeline run logs in Dev Console or Tekton CLI:
      
     \$ tkn pipeline logs petclinic-deploy -f -n $cicd_prj
+
+############################################################################
+############################################################################
 EOF
 }
 
 command.start() {
-  GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{.spec.host}}' -n $cicd_prj)
-
-  cat <<EOF | oc create -f - -n $cicd_prj
-apiVersion: tekton.dev/v1alpha1
-kind: PipelineRun
-metadata:
-  generateName: petclinic-deploy-run-
-spec:
-  pipelineRef:
-    name: petclinic-deploy
-  params:
-    - name: "NAMESPACE"
-      value: "$dev_prj"
-  resources:
-  - name: app-git
-    resourceRef:
-      name: petclinic-git
-  - name: app-image
-    resourceRef:
-      name: petclinic-image
-  workspaces:
-  - name: local-maven-repo
-    persistentVolumeClaim:
-      claimName: maven-repo-pvc
-EOF
+  oc create -f runs/pipeline-deploy-run.yaml -n $cicd_prj
 }
 
 command.uninstall() {
