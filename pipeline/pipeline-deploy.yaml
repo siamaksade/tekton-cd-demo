@@ -10,6 +10,10 @@ spec:
     type: git
   - name: app-image
     type: image
+  params:
+    - name: NAMESPACE
+      type: string
+      default: demo-dev
   tasks:
   - name: unit-tests
     taskRef:
@@ -96,7 +100,7 @@ spec:
     params:
     - name: COMMANDS
       value: |
-          oc scale deployment/spring-petclinic --replicas=0
-          oc rollout status deployment/spring-petclinic
-          oc scale deployment/spring-petclinic --replicas=1
-          oc rollout status deployment/spring-petclinic
+          oc scale deployment/spring-petclinic --replicas=0 -n $(params.NAMESPACE)
+          oc rollout status deployment/spring-petclinic -n $(params.NAMESPACE)
+          oc scale deployment/spring-petclinic --replicas=1 -n $(params.NAMESPACE)
+          oc rollout status deployment/spring-petclinic -n $(params.NAMESPACE)
