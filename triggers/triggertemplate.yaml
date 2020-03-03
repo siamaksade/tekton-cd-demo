@@ -19,12 +19,12 @@ spec:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      generateName: petclinic-deploy-run-
+      generateName: petclinic-deploy-dev-run-
       labels:
-        tekton.dev/pipeline: petclinic-deploy
+        tekton.dev/pipeline: petclinic-deploy-dev
     spec:
       pipelineRef:
-        name: petclinic-deploy
+        name: petclinic-deploy-dev
       resources:
       - name: app-git
         resourceRef:

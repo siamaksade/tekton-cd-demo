@@ -5,6 +5,20 @@ declare -r SCRIPT_DIR=$(cd -P $(dirname $0) && pwd)
 declare PRJ_PREFIX="demo"
 declare COMMAND="help"
 
+valid_command() {
+  local fn=$1; shift
+  [[ $(type -t "$fn") == "function" ]]
+}
+
+info() {
+    printf "\n$@"
+}
+
+err() {
+  printf "\nERROR: $1\n"
+  exit 1
+}
+
 while (( "$#" )); do
   case "$1" in
     install|uninstall|start)
@@ -19,7 +33,7 @@ while (( "$#" )); do
       shift
       break
       ;;
-    -*|--*=) 
+    -*|--*)
       err "Error: Unsupported flag $1"
       ;;
     *) 
@@ -30,20 +44,6 @@ done
 declare -r dev_prj="$PRJ_PREFIX-dev"
 declare -r stage_prj="$PRJ_PREFIX-stage"
 declare -r cicd_prj="$PRJ_PREFIX-cicd"
-
-valid_command() {
-  local fn=$1; shift
-  [[ $(type -t "$fn") == "function" ]]
-}
-
-info() {
-    printf "\n$@"
-}
-
-err() {
-  printf "\nERROR: $1\n"
-  exit 1
-}
 
 command.help() {
   cat <<-EOF
@@ -68,7 +68,7 @@ EOF
 command.install() {
   oc version >/dev/null 2>&1 || err "no oc binary found"
 
-  info "Creating namespaces"
+  info "Creating namespaces $cicd_prj, $dev_prj, $stage_prj"
   oc get ns $cicd_prj 2>/dev/null  || { 
     oc new-project $cicd_prj 
   }
@@ -91,7 +91,8 @@ command.install() {
   oc apply -f tasks -n $cicd_prj
   oc apply -f config/maven-configmap.yaml -n $cicd_prj
   oc apply -f pipelines/pipeline-pvc.yaml -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy.yaml | oc apply -f - -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | oc apply -f - -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed "s/demo-stage/$stage_prj/g" pipelines/pipeline-deploy-stage.yaml | oc apply -f - -n $cicd_prj
   sed "s/demo-dev/$dev_prj/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $cicd_prj
   sed "s#https://github.com/spring-projects/spring-petclinic#http://$GOGS_HOSTNAME/gogs/spring-petclinic.git#g" pipelines/petclinic-git-resource.yaml | oc apply -f - -n $cicd_prj
   oc apply -f triggers -n $cicd_prj
@@ -111,33 +112,6 @@ command.install() {
   oc rollout status deployment/gogs -n $cicd_prj
   oc create -f config/gogs-init-taskrun.yaml -n $cicd_prj
 
-
-#   info "Creating pipeline resources for Gogs git repo and internal registry"
-#   # create pipeline resources
-#   cat <<EOF | oc create -f - -n $cicd_prj
-# apiVersion: tekton.dev/v1alpha1
-# kind: PipelineResource
-# metadata:
-#   name: petclinic-git
-# spec:
-#   type: git
-#   params:
-#   - name: url
-#     value: http://$GOGS_HOSTNAME/gogs/spring-petclinic.git
-# EOF
-
-#   cat <<EOF | oc create -f - -n $cicd_prj
-# apiVersion: tekton.dev/v1alpha1
-# kind: PipelineResource
-# metadata:
-#   name: petclinic-image
-# spec:
-#   type: image
-#   params:
-#   - name: url
-#     value: image-registry.openshift-image-registry.svc:5000/$dev_prj/spring-petclinic
-# EOF
-
   cat <<-EOF
 
 ############################################################################
@@ -154,7 +128,7 @@ command.install() {
 
   4) Check the pipeline run logs in Dev Console or Tekton CLI:
      
-    \$ tkn pipeline logs petclinic-deploy -f -n $cicd_prj
+    \$ tkn pipeline logs petclinic-deploy-dev -f -n $cicd_prj
 
 ############################################################################
 ############################################################################
@@ -162,7 +136,7 @@ EOF
 }
 
 command.start() {
-  oc create -f runs/pipeline-deploy-run.yaml -n $cicd_prj
+  oc create -f runs/pipeline-deploy-dev-run.yaml -n $cicd_prj
 }
 
 command.uninstall() {

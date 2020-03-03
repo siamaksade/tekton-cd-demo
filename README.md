@@ -40,7 +40,7 @@ On every push to the `spring-petclinic` git repository on Gogs git server, the f
 1. Check pipeline run logs
 
     ```
-    $ tkn pipeline logs petclinic-deploy -f NAMESPACE
+    $ tkn pipeline logs petclinic-deploy-dev -f NAMESPACE
     ```
 
 ![Pipelines in Dev Console](docs/images/pipelines.png)
