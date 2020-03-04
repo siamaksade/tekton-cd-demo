@@ -93,3 +93,10 @@ spec:
           oc rollout status deployment/spring-petclinic -n demo-dev
           oc scale deployment/spring-petclinic --replicas=1 -n demo-dev
           oc rollout status deployment/spring-petclinic -n demo-dev
+  - name: int-test
+    taskRef:
+      name: openshift-client
+    params:
+    - name: COMMANDS
+      value: |
+          sleep $(($RANDOM % 20 + 10))
