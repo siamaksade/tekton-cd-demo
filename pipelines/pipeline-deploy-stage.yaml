@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: petclinic-deploy-stage
+spec:
+  params:
+    - name: IMAGE_TAG
+      default: latest 
+      type: string
+      description: The image tag to be promoted from DEV to STAGE environment
+  tasks:
+  - name: promote-stage
+    taskRef:
+      name: openshift-client
+    params:
+    - name: COMMANDS
+      value: |
+          oc tag demo-dev/spring-petclinic:${params.IMAGE_TAG} demo-stage/spring-petclinic:${params.IMAGE_TAG}
+          oc scale deployment/spring-petclinic --replicas=0 -n demo-stage
+          oc rollout status deployment/spring-petclinic -n demo-stage
+          oc scale deployment/spring-petclinic --replicas=1 -n demo-stage
+          oc rollout status deployment/spring-petclinic -n demo-stage
