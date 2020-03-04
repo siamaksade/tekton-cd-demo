@@ -23,6 +23,8 @@ spec:
   - name: test
     taskRef:
       name: openshift-client
+    runAfter:
+      - deploy
     params:
     - name: COMMANDS
       value: |
