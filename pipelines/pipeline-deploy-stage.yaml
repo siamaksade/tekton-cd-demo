@@ -24,7 +24,7 @@ spec:
     taskRef:
       name: openshift-client
     runAfter:
-      - deploy
+      - promote-stage
     params:
     - name: COMMANDS
       value: |

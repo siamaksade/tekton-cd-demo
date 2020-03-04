@@ -11,11 +11,11 @@ valid_command() {
 }
 
 info() {
-    printf "\n$@"
+    printf "\n# INFO: $@\n"
 }
 
 err() {
-  printf "\nERROR: $1\n"
+  printf "\n# ERROR: $1\n"
   exit 1
 }
 
