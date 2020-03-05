@@ -27,11 +27,19 @@ spec:
         name: petclinic-deploy-dev
       resources:
       - name: app-git
-        resourceRef:
-          name: petclinic-git
+        resourceSpec:
+          type: git
+          params:
+          - name: revision
+            value: $(params.gitrevision)
+          - name: url
+            value: $(params.gitrepositoryurl)
       - name: app-image
-        resourceRef:
-          name: petclinic-image
+        resourceSpec:
+          type: image
+          params:
+          - name: url
+            value: image-registry.openshift-image-registry.svc:5000/demo-dev/spring-petclinic:$(params.gitrevision)
       workspaces:
       - name: local-maven-repo
         persistentVolumeClaim:

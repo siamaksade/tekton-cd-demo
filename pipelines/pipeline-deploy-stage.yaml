@@ -8,6 +8,10 @@ spec:
       default: latest 
       type: string
       description: The image tag to be promoted from DEV to STAGE environment
+    - name: APP_CONFIG_BASE_URL
+      type: string
+      description: Base url for Spring Pet-Clinic k8s resources
+      default: https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/stage
   tasks:
   - name: promote-stage
     taskRef:
@@ -18,6 +22,11 @@ spec:
           oc tag demo-dev/spring-petclinic:${params.IMAGE_TAG} demo-stage/spring-petclinic:${params.IMAGE_TAG}
           oc scale deployment/spring-petclinic --replicas=0 -n demo-stage
           oc rollout status deployment/spring-petclinic -n demo-stage
+
+          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/deployment.yaml -n demo-stage
+          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/service.yaml -n demo-stage
+          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/route.yaml -n demo-stage
+
           oc scale deployment/spring-petclinic --replicas=1 -n demo-stage
           oc rollout status deployment/spring-petclinic -n demo-stage
   - name: test

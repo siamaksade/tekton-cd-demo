@@ -50,7 +50,7 @@ spec:
           else:
             print("Created admin user {}:{}".format(gogs_user, gogs_pwd))
 
-          # create git repo
+          # create git repo spring-petclinic
           data_repo = '{"clone_addr": "https://github.com/spring-projects/spring-petclinic", "uid": 1, "repo_name": "spring-petclinic"}'
           headers = {'Content-Type': 'application/json'}
           resp = requests.post(url = gogsURL + "/api/v1/repos/migrate", headers = headers, auth = (gogs_user, gogs_pwd), data = data_repo)  
@@ -61,7 +61,7 @@ spec:
           else:
             print("Created git repo spring-petclinic")
 
-          # configure webhook
+          # configure webhook on spring-petclinic
           data_webhook = '{"type": "gogs", "config": { "url": "' + webhookURL + '", "content_type": "json"}, "events": ["push"], "active": true}'
           headers = {'Content-Type': 'application/json'}
           resp = requests.post(url = gogsURL + "/api/v1/repos/" + gogs_user + "/spring-petclinic/hooks", 
@@ -74,4 +74,15 @@ spec:
             print(resp.content)
           else:
             print("Configured webhook: " + webhookURL)
+
+          # create git repo spring-petclinic-config
+          data_repo = '{"clone_addr": "https://github.com/siamaksade/spring-petclinic-config.git", "uid": 1, "repo_name": "spring-petclinic-config"}'
+          headers = {'Content-Type': 'application/json'}
+          resp = requests.post(url = gogsURL + "/api/v1/repos/migrate", headers = headers, auth = (gogs_user, gogs_pwd), data = data_repo)  
+
+          if resp.status_code != 200 and resp.status_code != 201:
+            print("Error creating git repo (status code: {})".format(resp.status_code))
+            print(resp.content)
+          else:
+            print("Created git repo spring-petclinic-config")
 

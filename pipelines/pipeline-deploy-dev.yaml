@@ -3,6 +3,11 @@ kind: Pipeline
 metadata:
   name: petclinic-deploy-dev
 spec:
+  params:
+    - name: APP_CONFIG_BASE_URL
+      type: string
+      description: Base url for Spring Pet-Clinic k8s resources
+      default: https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev
   workspaces:
   - name: local-maven-repo
   resources:
@@ -68,7 +73,7 @@ spec:
       value: custom-maven-settings
   - name: code-analysis
     taskRef:
-      name: sonar
+      name: maven
     runAfter:
       - unit-tests
     workspaces:
@@ -79,6 +84,12 @@ spec:
       - name: source
         resource: app-git
     params:
+    - name: GOALS
+      value:
+      - install
+      - sonar:sonar
+      - -Dsonar.host.url=http://sonarqube:9000
+      - -Dsonar.userHome=/tmp/sonar
     - name: MAVEN_SETTINGS_CONFIGMAP
       value: custom-maven-settings
   - name: deploy
@@ -91,6 +102,11 @@ spec:
       value: |
           oc scale deployment/spring-petclinic --replicas=0 -n demo-dev
           oc rollout status deployment/spring-petclinic -n demo-dev
+
+          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/deployment.yaml -n demo-dev
+          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/service.yaml -n demo-dev
+          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/route.yaml -n demo-dev
+
           oc scale deployment/spring-petclinic --replicas=1 -n demo-dev
           oc rollout status deployment/spring-petclinic -n demo-dev
   - name: int-test
