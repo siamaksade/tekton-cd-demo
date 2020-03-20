@@ -120,6 +120,8 @@ command.install() {
   oc create -f config/gogs-init-taskrun.yaml -n $cicd_prj
   oc project $cicd_prj
 
+  oc project $cicd_prj
+
   cat <<-EOF
 
 ############################################################################
