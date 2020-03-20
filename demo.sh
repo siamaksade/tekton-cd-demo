@@ -118,6 +118,7 @@ command.install() {
   sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" config/gogs-configmap.yaml | oc create -f - -n $cicd_prj
   oc rollout status deployment/gogs -n $cicd_prj
   oc create -f config/gogs-init-taskrun.yaml -n $cicd_prj
+  oc project $cicd_prj
 
   cat <<-EOF
 
