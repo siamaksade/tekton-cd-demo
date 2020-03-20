@@ -26,25 +26,6 @@ spec:
       value: ["package"]
     - name: MAVEN_SETTINGS_CONFIGMAP
       value: custom-maven-settings
-  - name: build-image
-    taskRef:
-      name: s2i-java-8
-      kind: ClusterTask
-    runAfter:
-      - release-app
-      - code-analysis
-    params:
-      - name: TLSVERIFY
-        value: "false"
-      - name: MAVEN_MIRROR_URL
-        value: http://nexus:8081/repository/maven-public/
-    resources:
-      inputs:
-      - name: source
-        resource: app-git
-      outputs:
-      - name: image
-        resource: app-image
   - name: release-app
     taskRef:
       name: maven
@@ -81,6 +62,41 @@ spec:
     params:
     - name: MAVEN_SETTINGS_CONFIGMAP
       value: custom-maven-settings
+  - name: genereate-report
+    taskRef:
+      name: gen-project-report
+    runAfter:
+      - unit-tests
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+    params:
+    - name: MAVEN_SETTINGS_CONFIGMAP
+      value: custom-maven-settings
+  - name: build-image
+    taskRef:
+      name: s2i-java-8
+      kind: ClusterTask
+    runAfter:
+      - release-app
+      - code-analysis
+      - genereate-report
+    params:
+      - name: TLSVERIFY
+        value: "false"
+      - name: MAVEN_MIRROR_URL
+        value: http://nexus:8081/repository/maven-public/
+    resources:
+      inputs:
+      - name: source
+        resource: app-git
+      outputs:
+      - name: image
+        resource: app-image
   - name: deploy
     taskRef:
       name: openshift-client
