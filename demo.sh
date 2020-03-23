@@ -4,6 +4,7 @@ set -e -u -o pipefail
 declare -r SCRIPT_DIR=$(cd -P $(dirname $0) && pwd)
 declare PRJ_PREFIX="demo"
 declare COMMAND="help"
+declare CONFIG_BASE_URL=https://raw.githubusercontent.com/siamaksade/spring-petclinic-config
 
 valid_command() {
   local fn=$1; shift
@@ -91,8 +92,8 @@ command.install() {
   oc apply -f tasks -n $cicd_prj
   oc apply -f config/maven-configmap.yaml -n $cicd_prj
   oc apply -f pipelines/pipeline-pvc.yaml -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | sed "s#https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config/raw/dev#g" | oc apply -f - -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed "s/demo-stage/$stage_prj/g" | sed "s#https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/stage#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config/raw/stage#g" | oc apply -f - -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | sed "s#$CONFIG_BASE_URL/dev#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config/raw/dev#g" | oc apply -f - -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed -E "s/demo-stage/$stage_prj/g" | sed "s#$CONFIG_BASE_URL/stage#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config/raw/stage#g" | oc apply -f - -n $cicd_prj
   sed "s/demo-dev/$dev_prj/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $cicd_prj
   sed "s#https://github.com/spring-projects/spring-petclinic#http://$GOGS_HOSTNAME/gogs/spring-petclinic.git#g" pipelines/petclinic-git-resource.yaml | oc apply -f - -n $cicd_prj
   
@@ -102,16 +103,16 @@ command.install() {
 
   info "Deploying app to $dev_prj namespace"
   oc import-image quay.io/siamaksade/spring-petclinic --confirm -n $dev_prj
-  oc apply -f https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev/app/deployment.yaml -n $dev_prj
-  oc apply -f https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev/app/service.yaml -n $dev_prj
-  oc apply -f https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev/app/route.yaml -n $dev_prj
+  oc apply -f $CONFIG_BASE_URL/dev/app/deployment.yaml -n $dev_prj
+  oc apply -f $CONFIG_BASE_URL/dev/app/service.yaml -n $dev_prj
+  oc apply -f $CONFIG_BASE_URL/dev/app/route.yaml -n $dev_prj
   oc set image deployment/spring-petclinic spring-petclinic=image-registry.openshift-image-registry.svc:5000/$dev_prj/spring-petclinic -n $dev_prj
 
   info "Deploying app to $stage_prj namespace"
   oc tag $dev_prj/spring-petclinic:latest $stage_prj/spring-petclinic:latest
-  oc apply -f https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev/app/deployment.yaml -n $stage_prj
-  oc apply -f https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev/app/service.yaml -n $stage_prj
-  oc apply -f https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev/app/route.yaml -n $stage_prj
+  oc apply -f CONFIG_BASE_URL/stage/app/deployment.yaml -n $stage_prj
+  oc apply -f CONFIG_BASE_URL/stage/app/service.yaml -n $stage_prj
+  oc apply -f CONFIG_BASE_URL/stage/app/route.yaml -n $stage_prj
   oc set image deployment/spring-petclinic spring-petclinic=image-registry.openshift-image-registry.svc:5000/$stage_prj/spring-petclinic -n $stage_prj
 
   info "Initiatlizing git repository in Gogs and configuring webhooks"

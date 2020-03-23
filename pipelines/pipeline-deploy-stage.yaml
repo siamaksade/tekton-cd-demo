@@ -19,7 +19,7 @@ spec:
     params:
     - name: COMMANDS
       value: |
-          oc tag demo-dev/spring-petclinic:${params.IMAGE_TAG} demo-stage/spring-petclinic:${params.IMAGE_TAG}
+          oc tag demo-dev/spring-petclinic:$(params.IMAGE_TAG) demo-stage/spring-petclinic:$(params.IMAGE_TAG)
           oc scale deployment/spring-petclinic --replicas=0 -n demo-stage
           oc rollout status deployment/spring-petclinic -n demo-stage
 
