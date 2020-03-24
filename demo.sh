@@ -110,16 +110,15 @@ command.install() {
 
   info "Deploying app to $stage_prj namespace"
   oc tag $dev_prj/spring-petclinic:latest $stage_prj/spring-petclinic:latest
-  oc apply -f CONFIG_BASE_URL/stage/app/deployment.yaml -n $stage_prj
-  oc apply -f CONFIG_BASE_URL/stage/app/service.yaml -n $stage_prj
-  oc apply -f CONFIG_BASE_URL/stage/app/route.yaml -n $stage_prj
+  oc apply -f $CONFIG_BASE_URL/stage/app/deployment.yaml -n $stage_prj
+  oc apply -f $CONFIG_BASE_URL/stage/app/service.yaml -n $stage_prj
+  oc apply -f $CONFIG_BASE_URL/stage/app/route.yaml -n $stage_prj
   oc set image deployment/spring-petclinic spring-petclinic=image-registry.openshift-image-registry.svc:5000/$stage_prj/spring-petclinic -n $stage_prj
 
   info "Initiatlizing git repository in Gogs and configuring webhooks"
   sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" config/gogs-configmap.yaml | oc create -f - -n $cicd_prj
   oc rollout status deployment/gogs -n $cicd_prj
   oc create -f config/gogs-init-taskrun.yaml -n $cicd_prj
-  oc project $cicd_prj
 
   oc project $cicd_prj
 
