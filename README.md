@@ -10,7 +10,9 @@ This repo is a sample [Tekton](http://www.tekton.dev) pipeline that builds and d
 * Imports [Spring PetClinic](https://github.com/spring-projects/spring-petclinic) repository into Gogs git server
 * Adds a webhook to `spring-petclinic` repository in Gogs to start the Tekton pipeline
 
-![Pipeline Diagram](docs/images/projects.svg)
+<p align="center">
+  <img width="580" src="docs/images/projects.svg">
+</p>
 
 On every push to the `spring-petclinic` git repository on Gogs git server, the following steps are executed within the pipeline:
 
