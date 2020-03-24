@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: petclinic-perf-tests-git
+spec:
+  type: git
+  params:
+  - name: url
+    value: https://github.com/siamaksade/spring-petclinic-gatling

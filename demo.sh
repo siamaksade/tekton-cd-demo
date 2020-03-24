@@ -92,6 +92,7 @@ command.install() {
   oc apply -f tasks -n $cicd_prj
   oc apply -f config/maven-configmap.yaml -n $cicd_prj
   oc apply -f pipelines/pipeline-pvc.yaml -n $cicd_prj
+  oc apply -f pipelines/petclinic-tests-git-resource.yaml -n $cicd_prj
   sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | sed "s#$CONFIG_BASE_URL/dev#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config/raw/dev#g" | oc apply -f - -n $cicd_prj
   sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed -E "s/demo-stage/$stage_prj/g" | sed "s#$CONFIG_BASE_URL/stage#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config/raw/stage#g" | oc apply -f - -n $cicd_prj
   sed "s/demo-dev/$dev_prj/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $cicd_prj
@@ -139,6 +140,12 @@ command.install() {
   4) Check the pipeline run logs in Dev Console or Tekton CLI:
      
     \$ tkn pipeline logs petclinic-deploy-dev -f -n $cicd_prj
+
+  
+  You can check the pipelinerun reports after completion at:
+  PipelineRun Reports: http://$(oc get route reports-repo -o template --template='{{.spec.host}}' -n $cicd_prj)
+  SonarQube: http://$(oc get route sonarqube -o template --template='{{.spec.host}}' -n $cicd_prj)
+  Sonatype Nexus: http://$(oc get route nexus -o template --template='{{.spec.host}}' -n $cicd_prj)
 
 ############################################################################
 ############################################################################

@@ -13,6 +13,8 @@ spec:
   resources:
   - name: app-git
     type: git
+  - name: perf-tests-git
+    type: git
   - name: app-image
     type: image
   tasks:
@@ -73,7 +75,7 @@ spec:
       - -Dsonar.userHome=/tmp/sonar
     - name: MAVEN_SETTINGS_CONFIGMAP
       value: custom-maven-settings
-  - name: genereate-report
+  - name: gen-report
     taskRef:
       name: gen-project-report
     runAfter:
@@ -95,7 +97,7 @@ spec:
     runAfter:
       - release-app
       - code-analysis
-      - genereate-report
+      - gen-report
     params:
       - name: TLSVERIFY
         value: "false"
@@ -134,3 +136,15 @@ spec:
     - name: COMMANDS
       value: |
           sleep $(($RANDOM % 20 + 10))
+  - name: perf-test
+    taskRef:
+      name: gatling
+    runAfter:
+      - deploy
+    params:
+      - name: APP_URL
+        value: "http://spring-petclinic.demo-dev.svc.cluster.local:8080"
+    resources:
+      inputs:
+      - name: simulations
+        resource: perf-tests-git

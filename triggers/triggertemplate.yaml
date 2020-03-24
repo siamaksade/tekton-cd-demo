@@ -29,6 +29,9 @@ spec:
       - name: app-git
         resourceRef:
           name: petclinic-git
+      - name: perf-tests-git
+        resourceRef:
+          name: petclinic-perf-tests-git
       - name: app-image
         resourceRef:
           name: petclinic-image
