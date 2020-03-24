@@ -142,7 +142,7 @@ command.install() {
     \$ tkn pipeline logs petclinic-deploy-dev -f -n $cicd_prj
 
   
-  You can check the pipelinerun reports after completion at:
+  You can find further details at:
   PipelineRun Reports: http://$(oc get route reports-repo -o template --template='{{.spec.host}}' -n $cicd_prj)
   SonarQube: http://$(oc get route sonarqube -o template --template='{{.spec.host}}' -n $cicd_prj)
   Sonatype Nexus: http://$(oc get route nexus -o template --template='{{.spec.host}}' -n $cicd_prj)

@@ -1,12 +1,16 @@
 # CI/CD Demo with Tekton Pipelines
 
-This repo is a sample [Tekton](http://www.tekton.dev) pipeline that builds and deploys the [Spring PetClinic](https://github.com/spring-projects/spring-petclinic) sample Spring Boot application on OpenShift. This demo deploys:
+This repo is a sample [Tekton](http://www.tekton.dev) pipeline that builds and deploys the [Spring PetClinic](https://github.com/spring-projects/spring-petclinic) sample Spring Boot application on OpenShift. This demo creates:
+* 3 namespaces for CI/CD, DEV and STAGE projects
 * A sample Tekton pipeline
 * Gogs git server (username/password: `gogs`/`gogs`)
 * Sonatype Nexus (username/password: `admin`/`admin123`)
 * SonarQube (username/password: `admin`/`admin`)
+* Report repository for test and project generated reports
 * Imports [Spring PetClinic](https://github.com/spring-projects/spring-petclinic) repository into Gogs git server
 * Adds a webhook to `spring-petclinic` repository in Gogs to start the Tekton pipeline
+
+![Pipeline Diagram](docs/images/projects.svg)
 
 On every push to the `spring-petclinic` git repository on Gogs git server, the following steps are executed within the pipeline:
 
@@ -17,6 +21,8 @@ On every push to the `spring-petclinic` git repository on Gogs git server, the f
 1. Application image is deployed with a rolling update
 
 ![Pipeline Diagram](docs/images/pipeline-diagram.svg)
+
+
 
 # Deploy
 
@@ -46,8 +52,3 @@ On every push to the `spring-petclinic` git repository on Gogs git server, the f
 ![Pipelines in Dev Console](docs/images/pipelines.png)
 
 ![Pipeline Diagram](docs/images/pipeline-viz.png)
-
-
-## TODO
-
-* Add pipeline for promotion to stage
