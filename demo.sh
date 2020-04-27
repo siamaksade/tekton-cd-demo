@@ -93,10 +93,12 @@ command.install() {
   oc apply -f config/maven-configmap.yaml -n $cicd_prj
   oc apply -f pipelines/pipeline-pvc.yaml -n $cicd_prj
   oc apply -f pipelines/petclinic-tests-git-resource.yaml -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | sed "s#$CONFIG_BASE_URL/dev#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config/raw/dev#g" | oc apply -f - -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed -E "s/demo-stage/$stage_prj/g" | sed "s#$CONFIG_BASE_URL/stage#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config/raw/stage#g" | oc apply -f - -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | oc apply -f - -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed -E "s/demo-stage/$stage_prj/g" | oc apply -f - -n $cicd_prj
   sed "s/demo-dev/$dev_prj/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $cicd_prj
   sed "s#https://github.com/spring-projects/spring-petclinic#http://$GOGS_HOSTNAME/gogs/spring-petclinic.git#g" pipelines/petclinic-git-resource.yaml | oc apply -f - -n $cicd_prj
+  sed "s#https://github.com/siamaksade/spring-petclinic-config#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config.git#g" pipelines/petclinic-config-git-resource.yaml | oc apply -f - -n $cicd_prj
+  sed "s#https://github.com/siamaksade/spring-petclinic-gatling#http://$GOGS_HOSTNAME/gogs/spring-petclinic-gatling.git#g" pipelines/petclinic-tests-git-resource.yaml | oc apply -f - -n $cicd_prj
   
   oc apply -f triggers/gogs-triggerbinding.yaml -n $cicd_prj
   oc apply -f triggers/triggertemplate.yaml -n $cicd_prj

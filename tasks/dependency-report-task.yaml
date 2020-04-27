@@ -1,0 +1,59 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: dependency-report
+spec:
+  workspaces:
+  - name: maven-repo
+  params:
+  - name: MAVEN_SETTINGS_CONFIGMAP
+    description: The configmap containing Maven settings.xml
+    type: string
+    default: maven-settings
+  - name: REPORTS_REPO_HOST
+    description: The reports repository host based on https://github.com/chmouel/openshift-django-uploader
+    default: http://reports-repo:8080
+  - name: REPORTS_REPO_USERNAME
+    description: The reports repository username
+    default: reports
+  - name: REPORTS_REPO_PASSWORD
+    description: The reports repository password
+    default: reports
+  resources:
+    inputs:
+    - name: source
+      type: git
+  steps:
+    - name: mvn
+      image: gcr.io/cloud-builders/mvn
+      workingDir: /workspace/source
+      command: ["/usr/bin/mvn"]
+      args:
+        - -Dmaven.repo.local=$(workspaces.maven-repo.path)
+        - -s
+        - /var/config/settings.xml
+        - package
+        - site
+        - -DskipTests
+      volumeMounts:
+        - name: maven-settings
+          mountPath: /var/config
+    - name: archive-site
+      workingDir: /workspace/source
+      image: docker.io/centos:8
+      env:
+        - name: PIPELINERUN_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['tekton.dev/pipelineRun']
+      script: |
+        #!/usr/bin/env bash
+
+        for f in $(find /workspace/source/target/site -type f); do
+          curl -u $(params.REPORTS_REPO_USERNAME):$(params.REPORTS_REPO_PASSWORD) -F path=$PIPELINERUN_NAME${f#/workspace/source/target} -X POST -F file=@${f} $(params.REPORTS_REPO_HOST)/upload; echo ""
+        done
+  volumes:
+    - name: maven-settings
+      configMap:
+        name: $(params.MAVEN_SETTINGS_CONFIGMAP)

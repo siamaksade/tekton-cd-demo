@@ -1,15 +1,14 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: openshift-client
 spec:
-  inputs:
-    params:
-      - name: COMMANDS
-        type: string 
+  params:
+    - name: COMMANDS
+      type: string 
   steps:
     - name: run-commands
       image: quay.io/openshift/origin-cli:latest
       script: |
         #!/usr/bin/env bash
-        $(inputs.params.COMMANDS)
+        $(params.COMMANDS)

@@ -16,7 +16,7 @@ spec:
   - name: contenttype
     description: The Content-Type of the event
   resourcetemplates:
-  - apiVersion: tekton.dev/v1alpha1
+  - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
       generateName: petclinic-deploy-dev-run-
@@ -29,9 +29,12 @@ spec:
       - name: app-git
         resourceRef:
           name: petclinic-git
-      - name: perf-tests-git
+      - name: config-git
         resourceRef:
-          name: petclinic-perf-tests-git
+          name: petclinic-config-git
+      - name: tests-git
+        resourceRef:
+          name: petclinic-tests-git
       - name: app-image
         resourceRef:
           name: petclinic-image

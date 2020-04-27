@@ -1,40 +1,62 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: petclinic-deploy-stage
 spec:
   params:
-    - name: IMAGE_TAG
-      default: latest 
-      type: string
-      description: The image tag to be promoted from DEV to STAGE environment
-    - name: APP_CONFIG_BASE_URL
-      type: string
-      description: Base url for Spring Pet-Clinic k8s resources
-      default: https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/stage
+  - name: IMAGE_TAG
+    default: latest 
+    type: string
+    description: The image tag to be promoted from DEV to STAGE environment
+  - name: DEV_PROJECT
+    type: string
+    default: demo-dev
+    description: The DEV project for the application
+  - name: STAGE_PROJECT
+    type: string
+    default: demo-stage
+    description: The STAGE project for the application
+  resources:
+  - name: config-git
+    type: git
+  - name: tests-git
+    type: git
   tasks:
-  - name: promote-stage
+  - name: promote-image
     taskRef:
       name: openshift-client
     params:
     - name: COMMANDS
-      value: |
-          oc tag demo-dev/spring-petclinic:$(params.IMAGE_TAG) demo-stage/spring-petclinic:$(params.IMAGE_TAG)
-          oc scale deployment/spring-petclinic --replicas=0 -n demo-stage
-          oc rollout status deployment/spring-petclinic -n demo-stage
-
-          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/deployment.yaml -n demo-stage
-          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/service.yaml -n demo-stage
-          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/route.yaml -n demo-stage
-
-          oc scale deployment/spring-petclinic --replicas=1 -n demo-stage
-          oc rollout status deployment/spring-petclinic -n demo-stage
+      value: "oc tag $(params.DEV_PROJECT)/spring-petclinic:$(params.IMAGE_TAG) $(params.STAGE_PROJECT)/spring-petclinic:$(params.IMAGE_TAG)"
+  - name: deploy-stage
+    taskRef:
+      name: deploy-app
+    runAfter:
+      - promote-image
+    params:
+    - name: DEPLOYMENT_NAME
+      value: spring-petclinic
+    - name: CONTAINER_NAME
+      value: spring-petclinic
+    - name: NAMESPACE
+      value: $(params.STAGE_PROJECT)
+    - name: IMAGE
+      value: spring-petclinic:$(params.IMAGE_TAG)
+    - name: KUSTOMIZE_OVERLAY_DIR
+      value: environments/stage
+    resources:
+      inputs:
+      - name: config
+        resource: config-git
   - name: test
     taskRef:
-      name: openshift-client
+      name: gatling
     runAfter:
-      - promote-stage
+      - deploy-stage
     params:
-    - name: COMMANDS
-      value: |
-          sleep $(($RANDOM % 20 + 10))
+      - name: APP_URL
+        value: "http://spring-petclinic.$(params.STAGE_PROJECT).svc.cluster.local:8080"
+    resources:
+      inputs:
+      - name: simulations
+        resource: tests-git

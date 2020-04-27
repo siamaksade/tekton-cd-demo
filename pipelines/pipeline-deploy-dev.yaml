@@ -1,19 +1,21 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: petclinic-deploy-dev
 spec:
   params:
-    - name: APP_CONFIG_BASE_URL
-      type: string
-      description: Base url for Spring Pet-Clinic k8s resources
-      default: https://raw.githubusercontent.com/siamaksade/spring-petclinic-config/dev
+  - name: DEV_PROJECT
+    type: string
+    default: demo-dev
+    description: The DEV namespace where application is deployed
   workspaces:
   - name: local-maven-repo
   resources:
   - name: app-git
     type: git
-  - name: perf-tests-git
+  - name: config-git
+    type: git
+  - name: tests-git
     type: git
   - name: app-image
     type: image
@@ -75,9 +77,9 @@ spec:
       - -Dsonar.userHome=/tmp/sonar
     - name: MAVEN_SETTINGS_CONFIGMAP
       value: custom-maven-settings
-  - name: gen-report
+  - name: dependency-report
     taskRef:
-      name: gen-project-report
+      name: dependency-report
     runAfter:
       - unit-tests
     workspaces:
@@ -97,7 +99,7 @@ spec:
     runAfter:
       - release-app
       - code-analysis
-      - gen-report
+      - dependency-report
     params:
       - name: TLSVERIFY
         value: "false"
@@ -110,41 +112,44 @@ spec:
       outputs:
       - name: image
         resource: app-image
-  - name: deploy
+  - name: deploy-dev
     taskRef:
-      name: openshift-client
+      name: deploy-app
     runAfter:
       - build-image
     params:
-    - name: COMMANDS
-      value: |
-          oc scale deployment/spring-petclinic --replicas=0 -n demo-dev
-          oc rollout status deployment/spring-petclinic -n demo-dev
-
-          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/deployment.yaml -n demo-dev
-          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/service.yaml -n demo-dev
-          oc apply -f $(params.APP_CONFIG_BASE_URL)/app/route.yaml -n demo-dev
-
-          oc scale deployment/spring-petclinic --replicas=1 -n demo-dev
-          oc rollout status deployment/spring-petclinic -n demo-dev
+    - name: DEPLOYMENT_NAME
+      value: spring-petclinic
+    - name: CONTAINER_NAME
+      value: spring-petclinic
+    - name: NAMESPACE
+      value: $(params.DEV_PROJECT)
+    - name: IMAGE
+      value: spring-petclinic:latest
+    - name: KUSTOMIZE_OVERLAY_DIR
+      value: environments/dev
+    resources:
+      inputs:
+      - name: config
+        resource: config-git
   - name: int-test
     taskRef:
       name: openshift-client
     runAfter:
-      - deploy
+      - deploy-dev
     params:
     - name: COMMANDS
       value: |
-          sleep $(($RANDOM % 20 + 10))
+          sleep $(($RANDOM % 40 + 20))
   - name: perf-test
     taskRef:
       name: gatling
     runAfter:
-      - deploy
+      - deploy-dev
     params:
       - name: APP_URL
-        value: "http://spring-petclinic.demo-dev.svc.cluster.local:8080"
+        value: "http://spring-petclinic.$(params.DEV_PROJECT).svc.cluster.local:8080"
     resources:
       inputs:
       - name: simulations
-        resource: perf-tests-git
+        resource: tests-git
