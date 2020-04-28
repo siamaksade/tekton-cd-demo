@@ -104,20 +104,6 @@ command.install() {
   oc apply -f triggers/triggertemplate.yaml -n $cicd_prj
   sed "s/demo-dev/$dev_prj/g" triggers/eventlistener.yaml | oc apply -f - -n $cicd_prj
 
-  info "Deploying app to $dev_prj namespace"
-  oc import-image quay.io/siamaksade/spring-petclinic --confirm -n $dev_prj
-  oc apply -f $CONFIG_BASE_URL/dev/app/deployment.yaml -n $dev_prj
-  oc apply -f $CONFIG_BASE_URL/dev/app/service.yaml -n $dev_prj
-  oc apply -f $CONFIG_BASE_URL/dev/app/route.yaml -n $dev_prj
-  oc set image deployment/spring-petclinic spring-petclinic=image-registry.openshift-image-registry.svc:5000/$dev_prj/spring-petclinic -n $dev_prj
-
-  info "Deploying app to $stage_prj namespace"
-  oc tag $dev_prj/spring-petclinic:latest $stage_prj/spring-petclinic:latest
-  oc apply -f $CONFIG_BASE_URL/stage/app/deployment.yaml -n $stage_prj
-  oc apply -f $CONFIG_BASE_URL/stage/app/service.yaml -n $stage_prj
-  oc apply -f $CONFIG_BASE_URL/stage/app/route.yaml -n $stage_prj
-  oc set image deployment/spring-petclinic spring-petclinic=image-registry.openshift-image-registry.svc:5000/$stage_prj/spring-petclinic -n $stage_prj
-
   info "Initiatlizing git repository in Gogs and configuring webhooks"
   sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" config/gogs-configmap.yaml | oc create -f - -n $cicd_prj
   oc rollout status deployment/gogs -n $cicd_prj
