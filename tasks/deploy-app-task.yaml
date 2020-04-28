@@ -38,3 +38,4 @@ spec:
         EOF
 
         oc apply -k $(params.KUSTOMIZE_OVERLAY_DIR) -n $(params.NAMESPACE)
+        oc rollout status deploy/$(params.DEPLOYMENT_NAME) -n $(params.NAMESPACE)
