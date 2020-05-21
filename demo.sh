@@ -131,6 +131,8 @@ command.install() {
 
   
   You can find further details at:
+  
+  Gogs Git Server: http://$GOGS_HOSTNAME/explore/repos
   PipelineRun Reports: http://$(oc get route reports-repo -o template --template='{{.spec.host}}' -n $cicd_prj)
   SonarQube: https://$(oc get route sonarqube -o template --template='{{.spec.host}}' -n $cicd_prj)
   Sonatype Nexus: http://$(oc get route nexus -o template --template='{{.spec.host}}' -n $cicd_prj)
