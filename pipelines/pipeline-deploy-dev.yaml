@@ -94,7 +94,7 @@ spec:
       value: custom-maven-settings
   - name: build-image
     taskRef:
-      name: s2i-java-8
+      name: s2i-java-8-pr
       kind: ClusterTask
     runAfter:
       - release-app
