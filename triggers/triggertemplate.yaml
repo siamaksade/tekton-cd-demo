@@ -8,6 +8,12 @@ spec:
   - name: gitrevision
     description: The git revision
     default: master
+  - name: gitshortsha
+    description: The short commit sha
+    default: master
+  - name: gitbranchname
+    description: The branch name
+    default: master
   - name: gitrepositoryurl
     description: The git repository url
   - name: message
@@ -19,26 +25,24 @@ spec:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
-      generateName: petclinic-deploy-dev-run-
+      generateName: petclinic-deploy-dev-
+      # name: petclinic-dev-$(tt.params.gitbranchname)-$(tt.params.gitshortsha)
       labels:
         tekton.dev/pipeline: petclinic-deploy-dev
     spec:
       pipelineRef:
         name: petclinic-deploy-dev
-      resources:
-      - name: app-git
-        resourceRef:
-          name: petclinic-git
-      - name: config-git
-        resourceRef:
-          name: petclinic-config-git
-      - name: tests-git
-        resourceRef:
-          name: petclinic-tests-git
-      - name: app-image
-        resourceRef:
-          name: petclinic-image
+      params:
+        - name: APP_SOURCE_GIT
+          value: $(tt.params.gitrepositoryurl)
+        - name: APP_SOURCE_REVISION
+          value: $(tt.params.gitrevision)
+        - name: APP_IMAGE_TAG
+          value: $(tt.params.gitbranchname)-$(tt.params.gitshortsha)
       workspaces:
-      - name: local-maven-repo
+      - name: maven-settings
+        configMap:
+          name: maven-settings
+      - name: workspace
         persistentVolumeClaim:
-          claimName: maven-repo-pvc
+          claimName: petclinic-dev-workspace

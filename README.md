@@ -1,8 +1,8 @@
 # CI/CD Demo with Tekton Pipelines
 
-This repo is a sample [Tekton](http://www.tekton.dev) pipeline that builds and deploys the [Spring PetClinic](https://github.com/spring-projects/spring-petclinic) sample Spring Boot application on OpenShift. This demo creates:
+This repo is CI/CD demo using [Tekton](http://www.tekton.dev) pipelines on OpenShift which builds and deploys the [Spring PetClinic](https://github.com/spring-projects/spring-petclinic) sample Spring Boot application. This demo creates:
 * 3 namespaces for CI/CD, DEV and STAGE projects
-* A sample Tekton pipeline
+* 2 Tekton pipelines for deploying application to DEV and promoting to STAGE environments
 * Gogs git server (username/password: `gogs`/`gogs`)
 * Sonatype Nexus (username/password: `admin`/`admin123`)
 * SonarQube (username/password: `admin`/`admin`)
@@ -14,16 +14,29 @@ This repo is a sample [Tekton](http://www.tekton.dev) pipeline that builds and d
   <img width="580" src="docs/images/projects.svg">
 </p>
 
-On every push to the `spring-petclinic` git repository on Gogs git server, the following steps are executed within the pipeline:
+## Deploy DEV Pipeline
 
-1. Code is cloned from Gogs and the unit-tests are run
-1. Application is packaged as a JAR and pushed to Sonatype Nexus snapshot repository
-1. In parallel, the code is analyzed by SonarQube for anti-patterns, code coverage and potential bugs
-1. A container image (_spring-petclinic:latest_) is built using the [Source-to-Image](https://github.com/openshift/source-to-image) for Java apps, and pushed to OpenShift internal registry
-1. Application image is deployed with a rolling update
+On every push to the `spring-petclinic` git repository on Gogs git server, the following steps are executed within the DEV pipeline:
 
-![Pipeline Diagram](docs/images/pipeline-diagram.svg)
+1. Code is cloned from Gogs git server and the unit-tests are run
+1. Unit tests are executed and in parallel the code is analyzed by SonarQube for anti-patterns, and a dependency report is generated
+1. Application is packaged as a JAR and released to Sonatype Nexus snapshot repository
+1. A container image is built in DEV environment using S2I, and pushed to OpenShift internal registry, and tagged with `spring-petclinic:[branch]-[commit-sha]` and `spring-petclinic:latest`
+1. Kubernetes manifests and performance tests configurations are cloned from Git repository
+1. Application is deployed into the DEV environment using `kustomize`, the DEV manifests from Git, and the application `[branch]-[commit-sha]` image tag built in previous steps
+1. Integrations tests and Gatling performance tests are executed in parallel against the DEV environment and the results are uploaded to the report server
 
+![Pipeline Diagram](docs/images/pipeline-diagram-dev.svg)
+
+## Deploy STAGE Pipeline
+
+The STAGE deploy pipeline requires the image tag that you want to deploy into STAGE environment. The following steps take place within the STAGE pipeline:
+1. Kubernetes manifests are cloned from Git repository
+1. Application is deployed into the STAGE environment using `kustomize`, the STAGE manifests from Git, and the application `[branch]-[commit-sha]` image tag built in previous steps. Alternatively you can deploy the `latest` tag of the application image for demo purposes.
+1. In parallel, tests are cloned from Git repository
+1. Tests are executed against the staging environment
+
+![Pipeline Diagram](docs/images/pipeline-diagram-stage.svg)
 
 
 # Deploy

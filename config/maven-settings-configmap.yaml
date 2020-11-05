@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: custom-maven-settings
+  name: maven-settings
 data:
   settings.xml: |
     <?xml version="1.0" encoding="UTF-8"?>

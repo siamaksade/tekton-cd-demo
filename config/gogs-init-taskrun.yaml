@@ -85,6 +85,20 @@ spec:
           else:
             print("Created git repo spring-petclinic-config")
 
+          # configure webhook on spring-petclinic-config
+          data_webhook = '{"type": "gogs", "config": { "url": "' + webhookURL + '", "content_type": "json"}, "events": ["push"], "active": true}'
+          headers = {'Content-Type': 'application/json'}
+          resp = requests.post(url = gogsURL + "/api/v1/repos/" + gogs_user + "/spring-petclinic-config/hooks", 
+                              headers = headers, 
+                              auth = (gogs_user, gogs_pwd), 
+                              data = data_webhook) 
+
+          if resp.status_code != 200 and resp.status_code != 201:
+            print("Error configuring the webhook (status code: {})".format(resp.status_code))
+            print(resp.content)
+          else:
+            print("Configured webhook: " + webhookURL)
+
           # create git repo spring-petclinic-gatling
           data_repo = '{"clone_addr": "https://github.com/siamaksade/spring-petclinic-gatling", "uid": 1, "repo_name": "spring-petclinic-gatling"}'
           headers = {'Content-Type': 'application/json'}

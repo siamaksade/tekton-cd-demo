@@ -4,59 +4,97 @@ metadata:
   name: petclinic-deploy-stage
 spec:
   params:
-  - name: IMAGE_TAG
-    default: latest 
+  - name: APP_CONFIG_GIT
     type: string
-    description: The image tag to be promoted from DEV to STAGE environment
-  - name: DEV_PROJECT
+    description: The application configuration git repository
+    default: https://github.com/siamaksade/spring-petclinic-config
+  - name: APP_TESTS_GIT
     type: string
-    default: demo-dev
-    description: The DEV project for the application
-  - name: STAGE_PROJECT
+    description: The application test cases git repository
+    default: https://github.com/siamaksade/spring-petclinic-gatling
+  - name: APP_IMAGE_NAME
+    type: string
+    default: image-registry.openshift-image-registry.svc:5000/demo-dev/spring-petclinic
+    description: The application image to deploy to stage
+  - name: APP_IMAGE_TAG
+    type: string
+    default: "latest"
+    description: The application image tag to deploy to stage
+  - name: APP_IMAGE_DIGEST
+    type: string
+    default: ""
+    description: The application image digest to deploy to stage
+  - name: STAGE_NAMESPACE
     type: string
     default: demo-stage
-    description: The STAGE project for the application
-  resources:
-  - name: config-git
-    type: git
-  - name: tests-git
-    type: git
+    description: The namespace for Stage environments
+  workspaces:
+  - name: workspace
   tasks:
-  - name: promote-image
+  - name: config-clone
     taskRef:
-      name: openshift-client
+      name: git-clone
+      kind: ClusterTask
+    workspaces:
+    - name: output
+      workspace: workspace
     params:
-    - name: COMMANDS
-      value: "oc tag $(params.DEV_PROJECT)/spring-petclinic:$(params.IMAGE_TAG) $(params.STAGE_PROJECT)/spring-petclinic:$(params.IMAGE_TAG)"
+    - name: url
+      value: $(params.APP_CONFIG_GIT)
+    - name: subdirectory
+      value: spring-petclinic-config
+    - name: deleteExisting
+      value: "true"
+  - name: tests-clone
+    taskRef:
+      name: git-clone
+      kind: ClusterTask
+    workspaces:
+    - name: output
+      workspace: workspace
+    runAfter:
+      - config-clone
+    params:
+    - name: url
+      value: $(params.APP_TESTS_GIT)
+    - name: subdirectory
+      value: spring-petclinic-gatling
+    - name: deleteExisting
+      value: "true"
   - name: deploy-stage
     taskRef:
       name: deploy-app
     runAfter:
-      - promote-image
+      - config-clone
     params:
     - name: DEPLOYMENT_NAME
       value: spring-petclinic
-    - name: CONTAINER_NAME
-      value: spring-petclinic
+    - name: CURRENT_IMAGE
+      value: "quay.io/siamaksade/spring-petclinic:latest"
+    - name: NEW_IMAGE_NAME
+      value: $(params.APP_IMAGE_NAME)
+    - name: NEW_IMAGE_TAG
+      value: $(params.APP_IMAGE_TAG)
+    - name: NEW_IMAGE_DIGEST
+      value: $(params.APP_IMAGE_DIGEST)
     - name: NAMESPACE
-      value: $(params.STAGE_PROJECT)
-    - name: IMAGE
-      value: spring-petclinic:$(params.IMAGE_TAG)
+      value: $(params.STAGE_NAMESPACE)
     - name: KUSTOMIZE_OVERLAY_DIR
       value: environments/stage
-    resources:
-      inputs:
-      - name: config
-        resource: config-git
-  - name: test
+    workspaces:
+    - name: source
+      workspace: workspace
+      subPath: spring-petclinic-config
+  - name: test-stage
     taskRef:
       name: gatling
     runAfter:
       - deploy-stage
+      - tests-clone
     params:
       - name: APP_URL
-        value: "http://spring-petclinic.$(params.STAGE_PROJECT).svc.cluster.local:8080"
-    resources:
-      inputs:
-      - name: simulations
-        resource: tests-git
+        value: "http://spring-petclinic.$(params.STAGE_NAMESPACE).svc.cluster.local:8080"
+    workspaces:
+    - name: simulations
+      workspace: workspace
+      subPath: spring-petclinic-gatling

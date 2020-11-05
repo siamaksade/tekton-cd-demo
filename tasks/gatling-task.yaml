@@ -24,10 +24,9 @@ spec:
   - name: REPORTS_REPO_PASSWORD
     description: The reports repository password
     default: reports
-  resources:
-    inputs:
-    - name: simulations
-      type: git
+  workspaces:
+  - description: The workspace consisting of maven project.
+    name: simulations      
   steps:
     - name: run-tests
       image: quay.io/siamaksade/gatling:latest
@@ -43,7 +42,7 @@ spec:
         export JAVA_OPTS="-DtestDuration=$(params.CONCURRENT_USERS) -DuserCount=$(params.DURATION) -Dserver=$(params.APP_URL)"
 
         # run simulation
-        /opt/gatling/bin/gatling.sh -rd "Spring PetClinic Performance Test" -sf /workspace/simulations
+        /opt/gatling/bin/gatling.sh -rd "Spring PetClinic Performance Test" -sf $(workspaces.simulations.path)
 
         # upload results
         REPORT=$(ls -td /opt/gatling/results/* | head -1)

@@ -1,24 +1,14 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: petclinic-deploy-dev-run-
+  generateName: petclinic-deploy-dev-
 spec:
   pipelineRef:
     name: petclinic-deploy-dev
-  resources:
-  - name: app-git
-    resourceRef:
-      name: petclinic-git
-  - name: config-git
-    resourceRef:
-      name: petclinic-config-git
-  - name: tests-git
-    resourceRef:
-      name: petclinic-tests-git
-  - name: app-image
-    resourceRef:
-      name: petclinic-image
   workspaces:
-  - name: local-maven-repo
+  - name: workspace
     persistentVolumeClaim:
-      claimName: maven-repo-pvc
+      claimName: petclinic-dev-workspace
+  - name: maven-settings
+    configMap:
+      name: maven-settings

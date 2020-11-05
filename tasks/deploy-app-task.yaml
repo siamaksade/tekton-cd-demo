@@ -7,35 +7,48 @@ spec:
     - name: DEPLOYMENT_NAME
       description: The name of deployment
       type: string
-    - name: CONTAINER_NAME
-      description: The name of deployment
+    - name: CURRENT_IMAGE
+      description: The current image repo/image:tag in the manifests for the deployment
       type: string
+    - name: NEW_IMAGE_NAME
+      description: The new image repo/image to be deployed
+      type: string
+    - name: NEW_IMAGE_TAG
+      description: The new image tag to be deployed
+      type: string
+      default: ""
+    - name: NEW_IMAGE_DIGEST
+      description: The digest of the new image to get deployed
+      type: string
+      default: ""
     - name: NAMESPACE
       description: The namespace for the deployment
       type: string
-    - name: IMAGE
-      description: The image from OpenShift registry to be deployed e.g. imagestream:tag
     - name: KUSTOMIZE_OVERLAY_DIR
       description: The subdirectory in configs git repo for the kustomize overlay to be applied
-  resources:
-    inputs:
-    - name: config
-      type: git
+  workspaces:
+  - description: The workspace consisting of maven project.
+    name: source
   steps:
     - name: apply-manifests
-      workingDir: /workspace/config
-      image: quay.io/openshift/origin-cli:latest
+      workingDir: $(workspaces.source.path)
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli
       script: |
         #!/usr/bin/env bash
 
-        image_digest=$(oc get istag $(params.IMAGE) -n $(params.NAMESPACE) -o template --template='{{.image.dockerImageReference}}')
-        cat << EOF >> /workspace/config/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
-        
-        images:
-        - name: quay.io/siamaksade/spring-petclinic:latest
-          newName: ${image_digest%@*}
-          digest: ${image_digest#*@}
-        EOF
+        echo -e "\n\nimages:" >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
+        echo '- name: $(params.CURRENT_IMAGE)' >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
+        echo '  newName: $(params.NEW_IMAGE_NAME)' >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
+        [[ "x$(params.NEW_IMAGE_TAG)" != "x" ]] && echo '  newTag: $(params.NEW_IMAGE_TAG)' >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
+        [[ "x$(params.NEW_IMAGE_DIGEST)" != "x" ]] && echo '  digest: $(params.NEW_IMAGE_DIGEST)' >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
+
+        echo "########################"  
+        echo "## kustomization.yaml ##"
+        echo "########################"
+
+        cat $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
+
+        echo "########################"
 
         oc apply -k $(params.KUSTOMIZE_OVERLAY_DIR) -n $(params.NAMESPACE)
         oc rollout status deploy/$(params.DEPLOYMENT_NAME) -n $(params.NAMESPACE)

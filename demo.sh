@@ -4,7 +4,6 @@ set -e -u -o pipefail
 declare -r SCRIPT_DIR=$(cd -P $(dirname $0) && pwd)
 declare PRJ_PREFIX="demo"
 declare COMMAND="help"
-declare CONFIG_BASE_URL=https://raw.githubusercontent.com/siamaksade/spring-petclinic-config
 
 valid_command() {
   local fn=$1; shift
@@ -22,7 +21,7 @@ err() {
 
 while (( "$#" )); do
   case "$1" in
-    install|uninstall|start)
+    install|uninstall|start|promote)
       COMMAND=$1
       shift
       ;;
@@ -57,8 +56,9 @@ command.help() {
   
   COMMANDS:
       install                        Sets up the demo and creates namespaces
-      uninstall                      Deletes the demo namespaces
-      start                          Starts the demo pipeline
+      uninstall                      Deletes the demo
+      start                          Starts the deploy DEV pipeline
+      promote                        Starts the deploy STAGE pipeline
       help                           Help about this command
 
   OPTIONS:
@@ -83,6 +83,7 @@ command.install() {
   info "Configure service account permissions for pipeline"
   oc policy add-role-to-user edit system:serviceaccount:$cicd_prj:pipeline -n $dev_prj
   oc policy add-role-to-user edit system:serviceaccount:$cicd_prj:pipeline -n $stage_prj
+  oc policy add-role-to-user edit system:serviceaccount:$stage_prj:default -n $dev_prj
 
   info "Deploying CI/CD infra to $cicd_prj namespace"
   oc apply -f cd -n $cicd_prj
@@ -90,15 +91,10 @@ command.install() {
 
   info "Deploying pipeline and tasks to $cicd_prj namespace"
   oc apply -f tasks -n $cicd_prj
-  oc apply -f config/maven-configmap.yaml -n $cicd_prj
-  oc apply -f pipelines/pipeline-pvc.yaml -n $cicd_prj
-  oc apply -f pipelines/petclinic-tests-git-resource.yaml -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | oc apply -f - -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed -E "s/demo-stage/$stage_prj/g" | oc apply -f - -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $cicd_prj
-  sed "s#https://github.com/siamaksade/spring-petclinic#http://$GOGS_HOSTNAME/gogs/spring-petclinic.git#g" pipelines/petclinic-git-resource.yaml | oc apply -f - -n $cicd_prj
-  sed "s#https://github.com/siamaksade/spring-petclinic-config#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config.git#g" pipelines/petclinic-config-git-resource.yaml | oc apply -f - -n $cicd_prj
-  sed "s#https://github.com/siamaksade/spring-petclinic-gatling#http://$GOGS_HOSTNAME/gogs/spring-petclinic-gatling.git#g" pipelines/petclinic-tests-git-resource.yaml | oc apply -f - -n $cicd_prj
+  oc create -f config/maven-settings-configmap.yaml -n $cicd_prj
+  oc apply -f config/pipeline-pvc.yaml -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | sed -E "s#https://github.com/siamaksade#http://$GOGS_HOSTNAME/gogs#g" | oc apply -f - -n $cicd_prj
+  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed -E "s/demo-stage/$stage_prj/g" | sed -E "s#https://github.com/siamaksade#http://$GOGS_HOSTNAME/gogs#g" | oc apply -f - -n $cicd_prj
   
   oc apply -f triggers/gogs-triggerbinding.yaml -n $cicd_prj
   oc apply -f triggers/triggertemplate.yaml -n $cicd_prj
@@ -133,7 +129,7 @@ command.install() {
   You can find further details at:
   
   Gogs Git Server: http://$GOGS_HOSTNAME/explore/repos
-  PipelineRun Reports: http://$(oc get route reports-repo -o template --template='{{.spec.host}}' -n $cicd_prj)
+  Reports Server: http://$(oc get route reports-repo -o template --template='{{.spec.host}}' -n $cicd_prj)
   SonarQube: https://$(oc get route sonarqube -o template --template='{{.spec.host}}' -n $cicd_prj)
   Sonatype Nexus: http://$(oc get route nexus -o template --template='{{.spec.host}}' -n $cicd_prj)
 
@@ -144,6 +140,10 @@ EOF
 
 command.start() {
   oc create -f runs/pipeline-deploy-dev-run.yaml -n $cicd_prj
+}
+
+command.promote() {
+  oc create -f runs/pipeline-deploy-stage-run.yaml -n $cicd_prj
 }
 
 command.uninstall() {
