@@ -34,13 +34,20 @@ spec:
       workingDir: $(workspaces.source.path)
       image: image-registry.openshift-image-registry.svc:5000/openshift/cli
       script: |
-        #!/usr/bin/env bash
 
-        echo -e "\n\nimages:" >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
-        echo '- name: $(params.CURRENT_IMAGE)' >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
-        echo '  newName: $(params.NEW_IMAGE_NAME)' >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
-        [[ "x$(params.NEW_IMAGE_TAG)" != "x" ]] && echo '  newTag: $(params.NEW_IMAGE_TAG)' >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
-        [[ "x$(params.NEW_IMAGE_DIGEST)" != "x" ]] && echo '  digest: $(params.NEW_IMAGE_DIGEST)' >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
+        find $(workspaces.source.path)
+
+        cat >> $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml <<- EOF
+
+        images:
+        - name: quay.io/siamaksade/spring-petclinic:latest
+          newName: $(params.NEW_IMAGE_NAME)
+          newTag: $(params.NEW_IMAGE_TAG)
+          digest: $(params.NEW_IMAGE_DIGEST)
+        EOF
+
+        [[ "x$(params.NEW_IMAGE_DIGEST)" == "x" ]] && sed -i "/digest/d" $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
+        [[ "x$(params.NEW_IMAGE_TAG)" == "x" ]] && sed -i "/newTag/d" $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
 
         echo "########################"  
         echo "## kustomization.yaml ##"
@@ -48,6 +55,8 @@ spec:
 
         cat $(workspaces.source.path)/$(params.KUSTOMIZE_OVERLAY_DIR)/kustomization.yaml
 
+        echo "######## DRY RUN #######"
+        oc apply -k $(params.KUSTOMIZE_OVERLAY_DIR) --dry-run=client -o yaml -n $(params.NAMESPACE)
         echo "########################"
 
         oc apply -k $(params.KUSTOMIZE_OVERLAY_DIR) -n $(params.NAMESPACE)

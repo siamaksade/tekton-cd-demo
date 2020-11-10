@@ -20,10 +20,10 @@ spec:
     type: string
     default: "latest"
     description: The application image tag to deploy to stage
-  - name: APP_IMAGE_DIGEST
-    type: string
-    default: ""
-    description: The application image digest to deploy to stage
+  # - name: APP_IMAGE_DIGEST
+  #   type: string
+  #   default: ""
+  #   description: The application image digest to deploy to stage
   - name: STAGE_NAMESPACE
     type: string
     default: demo-stage
@@ -75,8 +75,6 @@ spec:
       value: $(params.APP_IMAGE_NAME)
     - name: NEW_IMAGE_TAG
       value: $(params.APP_IMAGE_TAG)
-    - name: NEW_IMAGE_DIGEST
-      value: $(params.APP_IMAGE_DIGEST)
     - name: NAMESPACE
       value: $(params.STAGE_NAMESPACE)
     - name: KUSTOMIZE_OVERLAY_DIR

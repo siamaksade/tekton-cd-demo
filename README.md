@@ -67,3 +67,11 @@ The STAGE deploy pipeline requires the image tag that you want to deploy into ST
 ![Pipelines in Dev Console](docs/images/pipelines.png)
 
 ![Pipeline Diagram](docs/images/pipeline-viz.png)
+
+
+# Troubleshooting
+
+## Why am I getting `unable to recognize "tasks/task.yaml": no matches for kind "Task" in version "tekton.dev/v1beta1"` errors?
+
+You might have just installed the OpenShift Pipelines operator on the cluster and the operator has not finished installing Tekton on the cluster yet. Wait a few minutes for the operator to finish and then install the demo.
+
