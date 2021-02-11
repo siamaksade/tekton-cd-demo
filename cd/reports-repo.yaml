@@ -32,7 +32,7 @@ spec:
         volumeMounts:
         - mountPath: /fileuploads
           name: staticfiles
-      - image: nginxinc/nginx-unprivileged:latest
+      - image: quay.io/siamaksade/nginx:latest
         name: nginx
         ports:
         - containerPort: 8080
