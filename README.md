@@ -43,12 +43,12 @@ The STAGE deploy pipeline requires the image tag that you want to deploy into ST
 
 1. Get an OpenShift cluster via https://try.openshift.com
 1. Install OpenShift Pipelines Operator
-1. Download [OpenShift CLI](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/) and [Tekton CLI](https://github.com/tektoncd/cli/releases) 
+1. Download [OpenShift CLI](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/) and [Tekton CLI](https://github.com/tektoncd/cli/releases)
 1. Deploy the demo
 
     ```
     $ oc new-project demo
-    $ git clone https://github.com/siamaksade/tekton-cd-demo 
+    $ git clone https://github.com/siamaksade/tekton-cd-demo
     $ demo.sh install
     ```
 
@@ -61,7 +61,7 @@ The STAGE deploy pipeline requires the image tag that you want to deploy into ST
 1. Check pipeline run logs
 
     ```
-    $ tkn pipeline logs petclinic-deploy-dev -f NAMESPACE
+    $ tkn pipeline logs petclinic-deploy-dev -n NAMESPACE
     ```
 
 ![Pipelines in Dev Console](docs/images/pipelines.png)
@@ -74,4 +74,3 @@ The STAGE deploy pipeline requires the image tag that you want to deploy into ST
 ## Why am I getting `unable to recognize "tasks/task.yaml": no matches for kind "Task" in version "tekton.dev/v1beta1"` errors?
 
 You might have just installed the OpenShift Pipelines operator on the cluster and the operator has not finished installing Tekton on the cluster yet. Wait a few minutes for the operator to finish and then install the demo.
-
