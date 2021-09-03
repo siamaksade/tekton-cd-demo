@@ -54,7 +54,7 @@ spec:
     taskRef:
       name: maven
     runAfter:
-      - source-clone
+      - dependency-report
     workspaces:
     - name: source
       workspace: workspace
@@ -67,7 +67,7 @@ spec:
     taskRef:
       name: maven
     runAfter:
-      - source-clone
+      - dependency-report
     workspaces:
     - name: source
       workspace: workspace
@@ -101,7 +101,6 @@ spec:
       name: maven
     runAfter:
       - code-analysis
-      - dependency-report
       - unit-tests
     workspaces:
     - name: source
