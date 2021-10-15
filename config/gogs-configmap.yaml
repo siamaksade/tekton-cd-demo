@@ -14,20 +14,20 @@ data:
     HOST     = gogs-postgresql:5432
     NAME     = gogs
     USER     = gogs
-    PASSWD   = gogs
+    PASSWORD = gogs
 
     [repository]
     ROOT = /opt/gogs/data/repositories
 
     [server]
-    ROOT_URL=http://@HOSTNAME
+    EXTERNAL_URL=http://@HOSTNAME/
     SSH_DOMAIN=@HOSTNAME
 
     [security]
     INSTALL_LOCK = true
 
-    [service]
-    ENABLE_CAPTCHA = false
+    [auth]
+    ENABLE_REGISTRATION_CAPTCHA = false
 
     [webhook]
     SKIP_TLS_VERIFY = true
