@@ -51,15 +51,14 @@ The STAGE deploy pipeline requires the image tag that you want to deploy into ST
 1. Deploy the demo
 
     ```
-    $ oc new-project demo
     $ git clone https://github.com/siamaksade/tekton-cd-demo
-    $ demo.sh install
+    $ cd tekton-cd-demo && ./demo.sh install
     ```
 
 1. Start the deploy pipeline by making a change in the `spring-petclinic` Git repository on Gogs, or run the following:
 
     ```
-    $ demo.sh start
+    $ ./demo.sh start
     ```
 
 1. Check pipeline run logs

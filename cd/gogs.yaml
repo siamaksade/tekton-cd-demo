@@ -166,7 +166,7 @@ spec:
   type: ClusterIP
 ---
 kind: Route
-apiVersion: v1
+apiVersion: route.openshift.io/v1
 id: gogs-http
 metadata:
   labels:
