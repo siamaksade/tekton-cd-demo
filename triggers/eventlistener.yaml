@@ -1,5 +1,5 @@
 ---
-apiVersion: triggers.tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
   name: webhook
@@ -8,16 +8,19 @@ spec:
   triggers:
     - name: petclinic-webhook
       interceptors:
-        - cel:
-            overlays:
-            - key: short_sha
-              expression: "body.after.truncate(7)"
-            - key: branch_name
-              expression: "body.ref.split('/')[2]"
+        - ref:
+            name: "cel"
+          params:
+            - name: "overlays"
+              value:
+                - key: short_sha
+                  expression: "body.after.truncate(7)"
+                - key: branch_name
+                  expression: "body.ref.split('/')[2]"
       bindings:
         - ref: gogs-triggerbinding
       template:
-        name: petclinic-trigger-template
+         ref: petclinic-trigger-template
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
