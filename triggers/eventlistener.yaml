@@ -29,7 +29,7 @@ metadata:
     eventlistener: webhook
 spec:
   port:
-    targetPort: 8000
+    targetPort: 8080
   to:
     kind: "Service"
     name: el-webhook
