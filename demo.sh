@@ -105,7 +105,11 @@ command.install() {
   oc rollout status deployment/gogs -n $cicd_prj
   oc create -f config/gogs-init-taskrun.yaml -n $cicd_prj
 
-  oc project $cicd_prj
+    oc project $cicd_prj
+
+  info "Wait for Nexus to be ready"
+  oc wait --for=condition=ready `oc get pod -o name|grep nexus-` --timeout=300s
+  NEXUS_PASSWORD=$(oc rsh deployment/nexus cat /nexus-data/admin.password)
 
   cat <<-EOF
 
@@ -132,6 +136,7 @@ command.install() {
   Reports Server: http://$(oc get route reports-repo -o template --template='{{.spec.host}}' -n $cicd_prj)
   SonarQube: https://$(oc get route sonarqube -o template --template='{{.spec.host}}' -n $cicd_prj)
   Sonatype Nexus: http://$(oc get route nexus -o template --template='{{.spec.host}}' -n $cicd_prj)
+                  password: $NEXUS_PASSWORD
 
 ############################################################################
 ############################################################################

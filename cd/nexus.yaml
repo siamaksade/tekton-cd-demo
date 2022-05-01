@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: nexus
-        image: quay.io/siamaksade/nexus3:3.16.2
+        image: quay.io/rbaumgar/nexus3:3.38.0
         env:
         - name: CONTEXT_PATH
           value: /
@@ -81,7 +81,7 @@ spec:
   sessionAffinity: None
   type: ClusterIP
 ---
-apiVersion: v1
+apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   labels:
